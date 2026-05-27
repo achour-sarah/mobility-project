@@ -15,7 +15,8 @@ from backend.routes.signalements  import signalements_bp
 from backend.routes.transports_routing import transports_routing_bp
 
 app = Flask(__name__)
-CORS(app)
+# Autoriser toutes les origines (Vercel, localhost, etc.)
+CORS(app, resources={r"/api/*": {"origins": "*"}})
 
 app.register_blueprint(trafic_bp,       url_prefix="/api")
 app.register_blueprint(transports_bp,   url_prefix="/api")
@@ -30,9 +31,9 @@ app.register_blueprint(transports_routing_bp, url_prefix="/api")
 def index():
     return jsonify({
         "message": "Plateforme Mobilité Urbaine — API v1.0",
+        "status": "running",
         "endpoints": [
             "/api/trafic",
-            "/api/trafic/prediction",
             "/api/transports",
             "/api/air",
             "/api/meteo",
@@ -42,23 +43,18 @@ def index():
         ]
     })
 
+@app.route("/health")
+def health():
+    return jsonify({"status": "ok"}), 200
+
 @app.errorhandler(404)
 def not_found(e):
     return jsonify({"error": "Endpoint introuvable"}), 404
 
 @app.errorhandler(500)
 def server_error(e):
-    return jsonify({"error": "Erreur serveur interne"}), 500
-
-import threading
-from etl.run_pipeline import run_realtime
+    return jsonify({"error": "Erreur serveur interne", "detail": str(e)}), 500
 
 if __name__ == "__main__":
     port = int(os.getenv("FLASK_PORT", 5000))
-    
-    # Démarrage du pipeline ETL en temps réel (en arrière-plan)
-    etl_thread = threading.Thread(target=run_realtime, daemon=True)
-    etl_thread.start()
-    print("Pipeline ETL temps reel demarre en tache de fond.")
-    
     app.run(debug=False, host="0.0.0.0", port=port)
