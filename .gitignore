@@ -1,0 +1,59 @@
+# === SECRETS - NE JAMAIS POUSSER ===
+.env
+*.env
+.env.*
+
+# === GROS FICHIERS GTFS (trop lourds pour GitHub) ===
+database/IDF/stop_times.txt
+database/IDF/shapes.txt
+database/IDF/object_codes_extension.txt
+database/IDF/trips.txt
+database/IDF/transfers.txt
+database/IDF/stops.txt
+database/IDF/pathways.txt
+database/IDF/routes.txt
+database/IDF/calendar_dates.txt
+database/IDF/calendar.txt
+database/IDF/agency.txt
+database/IDF/attributions.txt
+database/IDF/booking_rules.txt
+database/IDF/ticketing_deep_links.txt
+.env
+*.env
+.env.*
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.pkl
+*.joblib
+venv/
+env/
+.venv/
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+
+# Node / React
+node_modules/
+frontend/node_modules/
+frontend/build/
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Data
+*.csv
+*.parquet
+models/*.pkl
