@@ -32,6 +32,7 @@ def index():
     return jsonify({
         "message": "Plateforme Mobilité Urbaine — API v1.0",
         "status": "running",
+        "version": "1.0.1",
         "endpoints": [
             "/api/trafic",
             "/api/transports",
