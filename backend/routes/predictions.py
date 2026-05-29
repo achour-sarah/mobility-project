@@ -1,6 +1,4 @@
 from flask import Blueprint, jsonify, request
-from models.arima_model import train_arima_trafic, predict_arima_trafic, train_arima_air, predict_arima_air
-from models.lstm_model  import train_lstm_trafic, predict_lstm_trafic
 import threading
 
 predictions_bp = Blueprint("predictions", __name__)
@@ -8,13 +6,14 @@ predictions_bp = Blueprint("predictions", __name__)
 
 @predictions_bp.route("/predictions/trafic", methods=["GET"])
 def predict_trafic():
-    """Lance ARIMA + GradientBoosting et retourne les prédictions."""
+    """Lance ARIMA + LSTM/GradientBoosting et retourne les prédictions."""
     segment_id = request.args.get("segment_id", "A1-001")
     steps      = request.args.get("steps", 10, type=int)
 
     resultats = {}
 
     try:
+        from models.arima_model import predict_arima_trafic
         res_arima = predict_arima_trafic(
             segment_id=segment_id, steps=steps
         )
@@ -32,17 +31,20 @@ def predict_trafic():
                 for p in res_arima["predictions_future"]
             ],
         }
+    except (ImportError, ModuleNotFoundError):
+        resultats["arima"] = {"error": "Modèles ARIMA non disponibles en production (numpy/pandas absent)"}
     except Exception as e:
         resultats["arima"] = {"error": str(e)}
 
     try:
+        from models.lstm_model import predict_lstm_trafic
         res_lstm = predict_lstm_trafic(segment_id=segment_id)
-        # On garde 'gradient_boosting' ou on met 'lstm' selon ce qu'attend le front,
-        # mettons 'lstm' pour être plus propre.
         resultats["lstm"] = {
             "predictions_future": res_lstm["predictions_future"],
             "historique_recent": res_lstm.get("historique_recent", [])
         }
+    except (ImportError, ModuleNotFoundError):
+        resultats["lstm"] = {"error": "Modèle LSTM non disponible en production (numpy/pandas absent)"}
     except Exception as e:
         resultats["lstm"] = {"error": str(e)}
 
@@ -62,6 +64,7 @@ def predict_air():
     steps      = request.args.get("steps", 10, type=int)
 
     try:
+        from models.arima_model import predict_arima_air
         res = predict_arima_air(
             station_id=station_id,
             polluant=polluant,
@@ -77,6 +80,11 @@ def predict_air():
                 str(p) for p in res["predictions_future"]
             ],
         })
+    except (ImportError, ModuleNotFoundError):
+        return jsonify({
+            "status": "error",
+            "message": "Modèles ARIMA non disponibles en production (numpy/pandas absent)"
+        }), 503
     except Exception as e:
         return jsonify({"status": "error", "message": str(e)}), 500
 
@@ -85,6 +93,14 @@ def trigger_training():
     """Déclenche l'entraînement du LSTM en tâche de fond."""
     segment_id = request.json.get("segment_id", "A1-001") if request.is_json else request.args.get("segment_id", "A1-001")
     
+    try:
+        from models.lstm_model import train_lstm_trafic
+    except (ImportError, ModuleNotFoundError):
+        return jsonify({
+            "status": "error",
+            "message": "Modèle LSTM non disponible en production (numpy/pandas absent)"
+        }), 503
+
     def background_train():
         try:
             train_lstm_trafic(segment_id=segment_id)
