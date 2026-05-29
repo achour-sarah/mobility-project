@@ -53,7 +53,13 @@ def not_found(e):
 
 @app.errorhandler(500)
 def server_error(e):
-    return jsonify({"error": "Erreur serveur interne", "detail": str(e)}), 500
+    import traceback
+    tb = traceback.format_exc()
+    return jsonify({
+        "error": "Erreur serveur interne",
+        "detail": str(e),
+        "traceback": tb
+    }), 500
 
 if __name__ == "__main__":
     port = int(os.getenv("FLASK_PORT", 5000))

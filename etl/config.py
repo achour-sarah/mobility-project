@@ -7,16 +7,18 @@ OPENWEATHERMAP_API_KEY = os.getenv("OPENWEATHERMAP_API_KEY", "")
 TOMTOM_API_KEY         = os.getenv("TOMTOM_API_KEY", "")
 IDFM_API_KEY           = os.getenv("IDFM_API_KEY", "")
 
-POSTGRES_HOST     = os.getenv("POSTGRES_HOST", "localhost")
-POSTGRES_PORT     = int(os.getenv("POSTGRES_PORT", 5432))
-POSTGRES_DB       = os.getenv("POSTGRES_DB", "mobilite_urbaine")
-POSTGRES_USER     = os.getenv("POSTGRES_USER", "postgres")
-POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "admin123")
+DATABASE_URL = os.getenv("DATABASE_URL")
+if not DATABASE_URL:
+    POSTGRES_HOST     = os.getenv("POSTGRES_HOST", "localhost")
+    POSTGRES_PORT     = int(os.getenv("POSTGRES_PORT", 5432))
+    POSTGRES_DB       = os.getenv("POSTGRES_DB", "mobilite_urbaine")
+    POSTGRES_USER     = os.getenv("POSTGRES_USER", "postgres")
+    POSTGRES_PASSWORD = os.getenv("POSTGRES_PASSWORD", "admin123")
 
-DATABASE_URL = (
-    f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}"
-    f"@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
-)
+    DATABASE_URL = (
+        f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}"
+        f"@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
+    )
 
 MONGO_URI = os.getenv("MONGO_URI", "mongodb://localhost:27017/")
 MONGO_DB  = os.getenv("MONGO_DB", "mobilite_raw")
