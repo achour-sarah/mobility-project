@@ -172,7 +172,8 @@ export default function Simulation3DPage({ meteo, air, trafic }) {
   // Détecter la météo réelle de Paris
   useEffect(() => {
     if (meteo && meteo.length > 0) {
-      const desc = meteo[0].description.toLowerCase();
+      const parisMeteo = meteo.find(m => m.ville.toLowerCase() === 'paris') || meteo[0];
+      const desc = parisMeteo.description.toLowerCase();
       if (desc.includes('pluie') || desc.includes('averse') || desc.includes('bruine') || desc.includes('orage')) {
         setShowRain(true);
       }
