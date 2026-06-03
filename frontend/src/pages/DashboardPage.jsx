@@ -95,8 +95,6 @@ export default function DashboardPage({ trafic, transports, air, stats, alertes,
 
   if (!stats) return null;
 
-  const parisMeteo = (meteo && meteo.find(m => m.ville.toLowerCase() === 'paris')) || stats.meteo_paris || {};
-
   // Calcul du résumé des transports perturbés
   const pertCount = transports ? transports.filter(t => t.statut === 'perturbé' || t.statut === 'ralenti').length : 0;
   const interCount = transports ? transports.filter(t => t.statut === 'interrompu').length : 0;
@@ -149,8 +147,8 @@ export default function DashboardPage({ trafic, transports, air, stats, alertes,
           </div>
           <div style={styles.kpiMainRow}>
             <div style={styles.kpiSubCol}>
-              <div style={styles.kpiMainVal}>{parisMeteo.temperature !== undefined ? `${parisMeteo.temperature}°C` : '18°C'}</div>
-              <div style={styles.kpiSubLabel}>{parisMeteo.description || 'Légèrement nuageux'}</div>
+              <div style={styles.kpiMainVal}>{meteo && meteo[0] ? `${meteo[0].temperature}°C` : '18°C'}</div>
+              <div style={styles.kpiSubLabel}>{meteo && meteo[0] ? meteo[0].description : 'Légèrement nuageux'}</div>
             </div>
             <div style={styles.kpiDivider} />
             <div style={styles.kpiSubCol}>

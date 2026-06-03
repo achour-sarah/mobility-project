@@ -138,7 +138,6 @@ export default function App() {
   }, []);
 
   const d = data;
-  const parisMeteo = d.meteo?.find(m => m.ville.toLowerCase() === 'paris') || d.stats?.meteo_paris || d.meteo?.[0];
 
   return (
     <div style={styles.appContainer}>
@@ -212,13 +211,11 @@ export default function App() {
         </div>
 
         <div style={styles.headerRight}>
-          {parisMeteo && (
-            <div style={styles.meteoBox}>
-              <span style={{fontSize:'16px'}}>🌡️</span>
-              <span style={{fontWeight:700, color:'#0f172a'}}>{parisMeteo.temperature}°C</span>
-              <span style={{fontSize:'11px', color:'#64748b'}}>{parisMeteo.description}</span>
-            </div>
-          )}
+          <div style={styles.meteoBox}>
+            <span style={{fontSize:'16px'}}>🌡️</span>
+            <span style={{fontWeight:700, color:'#0f172a'}}>18°C</span>
+            <span style={{fontSize:'11px', color:'#64748b'}}>Légèrement nuageux</span>
+          </div>
           {error && <div style={styles.errorBadge}>⚠️ {error}</div>}
           <div style={styles.statusBox}>
             <div style={{...styles.statusDot, background: syncing ? '#f59e0b' : '#10b981', boxShadow: `0 0 8px ${syncing ? '#f59e0b' : '#10b981'}80`}} />
@@ -238,7 +235,7 @@ export default function App() {
             <p>Chargement des données franciliennes...</p>
           </div>
         )}
-        {d.stats && activeTab === 'dashboard'  && <DashboardPage stats={d.stats} trafic={d.trafic} transports={d.transports} air={d.air} alertes={alertes} meteo={d.meteo} />}
+        {d.stats && activeTab === 'dashboard'  && <DashboardPage stats={d.stats} trafic={d.trafic} transports={d.transports} air={d.air} alertes={alertes} />}
         {d.stats && activeTab === 'simulation' && <SimulationPage />}
         {d.stats && activeTab === 'reco'       && <RecoPage trafic={d.trafic} transports={d.transports} air={d.air} meteo={d.meteo} />}
         {d.stats && activeTab === '3d'         && <Simulation3DPage meteo={d.meteo} air={d.air} trafic={d.trafic} />}
