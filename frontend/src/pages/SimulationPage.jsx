@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, Legend, CartesianGrid } from 'recharts';
 
 const SCENARIOS = [
   { id: 'normal',    label: 'Transit Fluide',          icon: '🟢', descr: 'Flux régulier sous contrôle de l\'IA de régulation.' },
   { id: 'pointe',    label: 'Heure d\'Affluence',       icon: '⚡', descr: 'Pic de connexions physiques 7h-9h et 17h-19h.' },
-  { id: 'evenement', label: 'Hyper-Rassemblement',     icon: '🏟️', descr: 'Forte concentration locale pour congrès inter-planétaires.' },
-  { id: 'incident',  label: 'Alerte Système',          icon: '⚠️', descr: 'Panne temporaire de bouclier magnétique d\'un axe.' },
-  { id: 'meteo',     label: 'Météo Perturbée',         icon: '🌧️', descr: 'Averses ioniques imposant une régulation de vitesse.' },
-  { id: 'travaux',   label: 'Maintenance Réseau',      icon: '🔧', descr: 'Reconfiguration holographique des voies.' },
+  { id: 'evenement', label: 'Hyper-Rassemblement',     icon: '🏟️', descr: 'Forte concentration locale pour congrès.' },
+  { id: 'incident',  label: 'Alerte Système',          icon: '⚠️', descr: 'Panne temporaire de sustentation.' },
+  { id: 'meteo',     label: 'Météo Perturbée',         icon: '🌧️', descr: 'Averses ioniques imposant une régulation.' },
+  { id: 'travaux',   label: 'Maintenance Réseau',      icon: '🔧', descr: 'Reconfiguration des voies.' },
 ];
 
 function simulerBaseline(scenario, nbVehicules, heure) {
@@ -251,7 +252,7 @@ function QuantumTerminal({ scenario, projects, heure }) {
         messages.push('🛸 Drones-Pods : Altitude de croisière ajustée à 250m au-dessus de la Seine.');
       }
       if (projects.fusion) {
-        messages.push('⚛️ Micro-Fusion : Rendement énergétique propre à 99.997%. Aucun déchet émis.');
+        messages.push('⚛️ Micro-Fusion : Bilan carbone nul — réacteurs stationnaires à 100%.');
       }
       
       const randomMsg = messages[Math.floor(Math.random() * messages.length)];
@@ -293,11 +294,12 @@ export default function SimulationPage() {
   const [scenario, setScenario] = useState('normal');
   const [nbVehicules, setNbVehicules] = useState(1200);
   const [heure, setHeure] = useState(8);
+  const [chartMetric, setChartMetric] = useState('vitesse'); // 'vitesse' or 'co2'
   
   // Activation projets 2200
   const [projects, setProjects] = useState({
-    maglev: false,  
-    fusion: false,  
+    maglev: true,  
+    fusion: true,  
     drones: false   
   });
 
@@ -358,16 +360,78 @@ export default function SimulationPage() {
 
   const currentFutureMetrics = simFuture ? simFuture[heure] : { vitesse: 0, co2: 0, solar: 0 };
 
+  // Préparation des données pour le graphe de 24h
+  const getChartData = () => {
+    if (!simBaseline || !simFuture) return [];
+    return simBaseline.map((b, i) => ({
+      heure: b.heure,
+      baseline: b[chartMetric],
+      future: simFuture[i][chartMetric],
+    }));
+  };
+
+  const deltaVitesse = results ? Math.round(((results.future.vitesseMoy - results.baseline.vitesseMoy) / results.baseline.vitesseMoy) * 100) : 0;
+  const deltaCo2 = results ? Math.round(((results.future.co2Total - results.baseline.co2Total) / results.baseline.co2Total) * 100) : 0;
+  const deltaOccupation = results ? Math.round(((results.future.occupationMoy - results.baseline.occupationMoy) / results.baseline.occupationMoy) * 100) : 0;
+  const deltaTemps = results ? Math.round(((results.future.tempsTrajet - results.baseline.tempsTrajet) / results.baseline.tempsTrajet) * 100) : 0;
+
   return (
     <div style={styles.container}>
-      
-      {/* SECTION 1: CONFIGURATION & SCENARIOS */}
-      <div style={styles.card}>
-        <h2 style={styles.cardTitle}>🧬 Laboratoire Urbain 2200 — Simulation Éco-Futuriste de Paris</h2>
-        <div style={styles.grid}>
-          {/* Colonne Gauche: Scénarios et Sliders */}
-          <div style={styles.col}>
-            <div style={styles.subTitle}>1. Situation Globale</div>
+      <style>{`
+        @keyframes fly-capsule {
+          0% { left: -10%; }
+          100% { left: 110%; }
+        }
+        @keyframes fly-drone {
+          0% { left: -10%; top: 8px; }
+          50% { top: -6px; }
+          100% { left: 110%; top: 8px; }
+        }
+        .animate-capsule {
+          animation: fly-capsule linear infinite;
+        }
+        .animate-drone {
+          animation: fly-drone linear infinite;
+          animation-duration: 2.2s;
+          position: absolute;
+        }
+      `}</style>
+
+      {/* HEADER DE LA STATION DE SIMULATION */}
+      <div style={styles.workstationHeader}>
+        <div style={styles.wHeaderLeft}>
+          <div style={styles.badgeSim}>PROTOTYPE LAB</div>
+          <h2 style={styles.wTitle}>Cockpit de Simulation Éco-Futuriste</h2>
+          <p style={styles.wSubtitle}>Modélisation prédictive multicouche & optimisation IA des flux de transit parisiens pour l'an 2200.</p>
+        </div>
+        <div style={styles.wHeaderRight}>
+          <div style={styles.serverStatusCard}>
+            <div style={styles.serverDot} />
+            <div>
+              <div style={styles.serverLabel}>NOYAU PRED-IA</div>
+              <div style={styles.serverStatus}>EN LIGNE (2200hz)</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div style={styles.mainGrid}>
+        
+        {/* COLONNE GAUCHE: CONTRÔLEURS DE FLUX ET DIRECTIVES */}
+        <div style={styles.leftPane}>
+          
+          {/* PANEL 1: SITUATION DU RÉSEAU & CHRONO-VILLE */}
+          <div style={styles.controlCard}>
+            <div style={styles.cardHeader}>
+              <div style={styles.cardHeaderNumber}>01</div>
+              <div>
+                <h3 style={styles.cardHeaderTitle}>Contexte & Matrice Temporelle</h3>
+                <p style={styles.cardHeaderSubtitle}>Choisissez le contexte d'affluence et pilotez le temps</p>
+              </div>
+            </div>
+
+            {/* Scénarios */}
+            <div style={styles.scenarioLabel}>Scénarios Urbains Actifs</div>
             <div style={styles.scenariosGrid}>
               {SCENARIOS.map(s => (
                 <button
@@ -380,99 +444,36 @@ export default function SimulationPage() {
                 >
                   <span style={styles.scIcon}>{s.icon}</span>
                   <div style={styles.scText}>
-                    <b>{s.label}</b>
+                    <b style={{color: scenario === s.id ? '#1e3a8a' : '#1e293b'}}>{s.label}</b>
                     <span style={styles.scDesc}>{s.descr}</span>
                   </div>
                 </button>
               ))}
             </div>
-            
+
+            {/* Curseur de flux */}
             <div style={styles.sliderGroup}>
               <div style={styles.sliderLabel}>
-                <span>Flux de Voyageurs Simulé :</span>
-                <b style={{color:'#3b82f6'}}>{nbVehicules.toLocaleString()} unités/minute</b>
+                <span>Volume de Voyageurs Terrestres :</span>
+                <b style={{color:'#2563eb'}}>{nbVehicules.toLocaleString()} u/min</b>
               </div>
               <input
                 type="range" min={100} max={3000} step={100}
                 value={nbVehicules} onChange={e => setNbVehicules(+e.target.value)}
                 style={styles.slider}
               />
-              <div style={styles.sliderTicks}><span>100 (Fluide)</span><span>3 000 (Saturé)</span></div>
-            </div>
-          </div>
-
-          {/* Colonne Droite: Horizon 2200 & Chrono-Ville */}
-          <div style={styles.col}>
-            {/* Horizon 2200 Projects */}
-            <div style={styles.subTitle}>🚀 Horizon 2200 (Technologies Éco-Futuristes)</div>
-            <div style={styles.projectsWrapper}>
-              <button
-                onClick={() => toggleProject('maglev')}
-                style={{
-                  ...styles.projectToggle, 
-                  ...(projects.maglev ? styles.projectToggleActive : {}),
-                  background: projects.maglev ? 'linear-gradient(135deg, #10b981 0%, #064e3b 100%)' : '#0f172a',
-                  color: '#ffffff',
-                  borderColor: projects.maglev ? '#10b981' : '#334155'
-                }}
-              >
-                <div style={{...styles.toggleDot, background: projects.maglev ? '#ffffff' : '#cbd5e1'}} />
-                <div>
-                  <div style={{...styles.projectTitle, color: '#ffffff'}}>🚅 Hyper-Maglev Solaire (Vitesse Orbitale)</div>
-                  <div style={{...styles.projectDesc, color: projects.maglev ? '#d1fae5' : '#94a3b8'}}>
-                    Trains supraconducteurs à lévitation magnétique, alimentés par induction solaire orbitale (+450% de vitesse, zéro frottement)
-                  </div>
-                </div>
-              </button>
-
-              <button
-                onClick={() => toggleProject('drones')}
-                style={{
-                  ...styles.projectToggle, 
-                  ...(projects.drones ? styles.projectToggleActive : {}),
-                  background: projects.drones ? 'linear-gradient(135deg, #3b82f6 0%, #1e3a8a 100%)' : '#0f172a',
-                  color: '#ffffff',
-                  borderColor: projects.drones ? '#3b82f6' : '#334155'
-                }}
-              >
-                <div style={{...styles.toggleDot, background: projects.drones ? '#ffffff' : '#cbd5e1'}} />
-                <div>
-                  <div style={{...styles.projectTitle, color: '#ffffff'}}>🛸 Drones Autonomes & Aéro-Pods (3D Transit)</div>
-                  <div style={{...styles.projectDesc, color: projects.drones ? '#dbeafe' : '#94a3b8'}}>
-                    Véhicules volants individuels intelligents à propulsion ionique verte (-60% de trafic terrestre au sol)
-                  </div>
-                </div>
-              </button>
-
-              <button
-                onClick={() => toggleProject('fusion')}
-                style={{
-                  ...styles.projectToggle, 
-                  ...(projects.fusion ? styles.projectToggleActive : {}),
-                  background: projects.fusion ? 'linear-gradient(135deg, #a855f7 0%, #581c87 100%)' : '#0f172a',
-                  color: '#ffffff',
-                  borderColor: projects.fusion ? '#a855f7' : '#334155'
-                }}
-              >
-                <div style={{...styles.toggleDot, background: projects.fusion ? '#ffffff' : '#cbd5e1'}} />
-                <div>
-                  <div style={{...styles.projectTitle, color: '#ffffff'}}>⚛️ Micro-Fusion & Réseau Auto-Alimenté</div>
-                  <div style={{...styles.projectDesc, color: projects.fusion ? '#f3e8ff' : '#94a3b8'}}>
-                    Intégration de micro-réacteurs nucléaires propres et de capteurs de flux thermique pour un bilan carbone nul
-                  </div>
-                </div>
-              </button>
+              <div style={styles.sliderTicks}><span>100 (Fluide)</span><span>3 000 (Saturation)</span></div>
             </div>
 
-            {/* Lecteur Chrono-Ville */}
+            {/* Lecteur Temporel */}
             <div style={styles.chronoBox}>
-              <div style={styles.subTitle}>⏳ Chrono-Ville — Voyage dans le temps (24H)</div>
+              <div style={styles.chronoTitle}>⏳ Matrice Chrono-Ville (24 Heures)</div>
               <div style={styles.chronoControls}>
                 <button
                   onClick={() => setIsPlaying(!isPlaying)}
                   style={{...styles.playBtn, background: isPlaying ? '#ef4444' : '#10b981'}}
                 >
-                  {isPlaying ? '⏸ Pause' : '▶ Play'}
+                  {isPlaying ? '⏸ Pause' : '▶ Lancer 24h'}
                 </button>
                 <div style={styles.speedWrapper}>
                   {[1, 2, 5].map(s => (
@@ -485,7 +486,7 @@ export default function SimulationPage() {
                   ))}
                 </div>
                 <div style={styles.timeDisplay}>
-                  Heure simulée : <b style={{color:'#8b5cf6'}}>{String(heure).padStart(2, '0')}:00</b>
+                  Heure : <b style={{color:'#6366f1', fontFamily:'monospace', fontSize:'14px'}}>{String(heure).padStart(2, '0')}:00</b>
                 </div>
               </div>
               <input
@@ -495,169 +496,422 @@ export default function SimulationPage() {
               />
             </div>
           </div>
+
+          {/* PANEL 2: TECHNOLOGIES ET DIRECTIVES DE L'AN 2200 */}
+          <div style={styles.controlCard}>
+            <div style={styles.cardHeader}>
+              <div style={styles.cardHeaderNumber}>02</div>
+              <div>
+                <h3 style={styles.cardHeaderTitle}>Directives Technologiques 2200</h3>
+                <p style={styles.cardHeaderSubtitle}>Activez les technologies d'anticipation pour la transition</p>
+              </div>
+            </div>
+
+            <div style={styles.projectsList}>
+              {/* Maglev */}
+              <div style={{...styles.projectRow, borderColor: projects.maglev ? '#10b981' : '#e2e8f0', background: projects.maglev ? '#f0fdf4' : '#ffffff'}}>
+                <div style={styles.projectInfo}>
+                  <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+                    <span style={styles.projectEmoji}>🚅</span>
+                    <b style={styles.projTitle}>Hyper-Maglev Solaire (Induction Orbitale)</b>
+                  </div>
+                  <p style={styles.projDesc}>Réseau à sustentation magnétique à vitesse supersonique, alimenté par photovoltaïque orbital.</p>
+                </div>
+                <button 
+                  onClick={() => toggleProject('maglev')} 
+                  style={{...styles.toggleBtn, background: projects.maglev ? '#10b981' : '#cbd5e1'}}
+                >
+                  <div style={{...styles.toggleIndicator, transform: projects.maglev ? 'translateX(22px)' : 'translateX(2px)'}} />
+                </button>
+              </div>
+
+              {/* Drones */}
+              <div style={{...styles.projectRow, borderColor: projects.drones ? '#2563eb' : '#e2e8f0', background: projects.drones ? '#eff6ff' : '#ffffff'}}>
+                <div style={styles.projectInfo}>
+                  <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+                    <span style={styles.projectEmoji}>🛸</span>
+                    <b style={styles.projTitle}>Aéro-Pods Autonomes (Corridors 3D)</b>
+                  </div>
+                  <p style={styles.projDesc}>Utilisation des corridors aériens à 250m de hauteur pour le transit rapide individuel.</p>
+                </div>
+                <button 
+                  onClick={() => toggleProject('drones')} 
+                  style={{...styles.toggleBtn, background: projects.drones ? '#2563eb' : '#cbd5e1'}}
+                >
+                  <div style={{...styles.toggleIndicator, transform: projects.drones ? 'translateX(22px)' : 'translateX(2px)'}} />
+                </button>
+              </div>
+
+              {/* Fusion */}
+              <div style={{...styles.projectRow, borderColor: projects.fusion ? '#8b5cf6' : '#e2e8f0', background: projects.fusion ? '#f5f3ff' : '#ffffff'}}>
+                <div style={styles.projectInfo}>
+                  <div style={{display:'flex', alignItems:'center', gap:'8px'}}>
+                    <span style={styles.projectEmoji}>⚛️</span>
+                    <b style={styles.projTitle}>Micro-Fusion & Auto-Alimentation</b>
+                  </div>
+                  <p style={styles.projDesc}>Micro-centrales nucléaires propres et récupération thermique pour éliminer le bilan CO₂.</p>
+                </div>
+                <button 
+                  onClick={() => toggleProject('fusion')} 
+                  style={{...styles.toggleBtn, background: projects.fusion ? '#8b5cf6' : '#cbd5e1'}}
+                >
+                  <div style={{...styles.toggleIndicator, transform: projects.fusion ? 'translateX(22px)' : 'translateX(2px)'}} />
+                </button>
+              </div>
+            </div>
+          </div>
+
         </div>
+
+        {/* COLONNE DROITE: TÉLÉMÉTRIE EN TEMPS RÉEL (MISSION CONTROL) */}
+        <div style={styles.rightPane}>
+          
+          {/* LAB MISSION CONTROL: GAUGES, TERMINAL & SIMULATEUR */}
+          <div style={styles.telemetryWorkspace}>
+            <div style={styles.telemetryHeader}>
+              <div style={styles.telHeaderDot} />
+              <span style={styles.telHeaderTitle}>PUPITRE DE CONTRÔLE RÉSEAU QUANTIQUE</span>
+            </div>
+
+            {/* Hyperloop Simulator */}
+            <div style={{padding:'20px'}}>
+              <HyperloopSimulator 
+                vitesse={currentFutureMetrics.vitesse} 
+                isMaglev={projects.maglev} 
+                isDrones={projects.drones} 
+              />
+            </div>
+
+            {/* Gauges & Solaire Grid */}
+            <div style={styles.telemetryGrid}>
+              <div style={styles.telemetryCol}>
+                <div style={styles.gaugesContainer}>
+                  <Speedometer 
+                    value={currentFutureMetrics.vitesse} 
+                    label="Vitesse Transit" 
+                    max={600} 
+                    color={projects.maglev ? '#10b981' : '#3b82f6'} 
+                  />
+                  <AirPurityGauge 
+                    co2Value={currentFutureMetrics.co2} 
+                    isFusion={projects.fusion} 
+                  />
+                </div>
+              </div>
+              <div style={styles.telemetryCol}>
+                <SolarChargeWidget 
+                  efficiency={currentFutureMetrics.solar} 
+                  isMaglev={projects.maglev} 
+                />
+              </div>
+            </div>
+
+            {/* Quantum terminal at bottom of control panel */}
+            <div style={{padding:'0 20px 20px 20px'}}>
+              <QuantumTerminal 
+                scenario={scenario} 
+                projects={projects} 
+                heure={heure} 
+              />
+            </div>
+          </div>
+
+        </div>
+
       </div>
 
-      {/* SECTION 2: COMPARATIF DES RÉSULTATS (KPIs) */}
-      {results && (
-        <div style={styles.kpiRow}>
-          {[
-            { label: 'Vitesse de Transit Moyenne', baseline: `${results.baseline.vitesseMoy} km/h`, future: `${results.future.vitesseMoy} km/h`, better: results.future.vitesseMoy > results.baseline.vitesseMoy },
-            { label: 'CO₂ Total Rejeté (Réseau)', baseline: `${results.baseline.co2Total} t/h`, future: `${results.future.co2Total} t/h`, better: results.future.co2Total < results.baseline.co2Total },
-            { label: 'Saturation des Axes (Sol)', baseline: `${results.baseline.occupationMoy}%`, future: `${results.future.occupationMoy}%`, better: results.future.occupationMoy < results.baseline.occupationMoy },
-            { label: 'Temps de trajet (Monuments - 30km)', baseline: `${results.baseline.tempsTrajet} min`, future: `${results.future.tempsTrajet} min`, better: results.future.tempsTrajet < results.baseline.tempsTrajet }
-          ].map((r, i) => (
-            <div key={i} style={styles.kpiCard}>
-              <div style={styles.kpiLabel}>{r.label}</div>
-              <div style={styles.kpiValuesGrid}>
-                <div style={styles.kpiValItem}>
-                  <span style={styles.valTag}>Présent</span>
-                  <span style={styles.valText}>{r.baseline}</span>
+      {/* SECTION 4: COMPARATEUR DE RENDEMENT ET ANALYSEURS GRAPHIQUES */}
+      <div style={styles.analyticsSection}>
+        <div style={styles.analyticsTitleCard}>
+          <h3 style={styles.analyticsSectionTitle}>📈 Rapport d'Évaluation d'Impact Environnemental et Fluides</h3>
+          <p style={styles.analyticsSectionSubtitle}>Comparaison scientifique entre le modèle de référence actuel (2026) et le modèle optimisé (2200)</p>
+        </div>
+
+        <div style={styles.analyticsGrid}>
+          
+          {/* LISTE DES COMPARAISONS TECHNIQUES */}
+          <div style={styles.kpisPane}>
+            <h4 style={styles.paneMiniTitle}>Indicateurs Clés de Rendement (Moyenne 24H)</h4>
+            
+            <div style={styles.kpisVerticalList}>
+              {/* KPI 1 */}
+              <div style={styles.kpiItemCard}>
+                <div style={styles.kpiMeta}>
+                  <span style={styles.kpiName}>Vitesse de transit moyenne</span>
+                  <span style={{...styles.kpiDeltaBadge, background:'#dcfce7', color:'#15803d'}}>
+                    +{deltaVitesse}%
+                  </span>
                 </div>
-                <div style={styles.kpiValDivider} />
-                <div style={styles.kpiValItem}>
-                  <span style={{...styles.valTag, background: r.better ? '#dcfce7' : '#fee2e2', color: r.better ? '#15803d' : '#b91c1c'}}>2200</span>
-                  <span style={{...styles.valText, color: r.better ? '#10b981' : '#ef4444', fontWeight:800}}>{r.future}</span>
+                <div style={styles.kpiComparisonRow}>
+                  <div>
+                    <span style={styles.cmpLabel}>Modèle Actuel</span>
+                    <b style={styles.cmpValue}>{results?.baseline.vitesseMoy} km/h</b>
+                  </div>
+                  <div style={styles.cmpArrow}>➔</div>
+                  <div>
+                    <span style={styles.cmpLabel}>Horizon 2200</span>
+                    <b style={{...styles.cmpValue, color:'#10b981'}}>{results?.future.vitesseMoy} km/h</b>
+                  </div>
+                </div>
+              </div>
+
+              {/* KPI 2 */}
+              <div style={styles.kpiItemCard}>
+                <div style={styles.kpiMeta}>
+                  <span style={styles.kpiName}>Émissions Carbone (CO₂)</span>
+                  <span style={{...styles.kpiDeltaBadge, background:deltaCo2 < 0 ? '#dcfce7' : '#fee2e2', color: deltaCo2 < 0 ? '#15803d' : '#b91c1c'}}>
+                    {deltaCo2}%
+                  </span>
+                </div>
+                <div style={styles.kpiComparisonRow}>
+                  <div>
+                    <span style={styles.cmpLabel}>Modèle Actuel</span>
+                    <b style={styles.cmpValue}>{results?.baseline.co2Total} t/h</b>
+                  </div>
+                  <div style={styles.cmpArrow}>➔</div>
+                  <div>
+                    <span style={styles.cmpLabel}>Horizon 2200</span>
+                    <b style={{...styles.cmpValue, color:'#10b981'}}>{results?.future.co2Total} t/h</b>
+                  </div>
+                </div>
+              </div>
+
+              {/* KPI 3 */}
+              <div style={styles.kpiItemCard}>
+                <div style={styles.kpiMeta}>
+                  <span style={styles.kpiName}>Saturation Moyenne au Sol</span>
+                  <span style={{...styles.kpiDeltaBadge, background:'#dcfce7', color:'#15803d'}}>
+                    {deltaOccupation}%
+                  </span>
+                </div>
+                <div style={styles.kpiComparisonRow}>
+                  <div>
+                    <span style={styles.cmpLabel}>Modèle Actuel</span>
+                    <b style={styles.cmpValue}>{results?.baseline.occupationMoy}%</b>
+                  </div>
+                  <div style={styles.cmpArrow}>➔</div>
+                  <div>
+                    <span style={styles.cmpLabel}>Horizon 2200</span>
+                    <b style={{...styles.cmpValue, color:'#10b981'}}>{results?.future.occupationMoy}%</b>
+                  </div>
+                </div>
+              </div>
+
+              {/* KPI 4 */}
+              <div style={styles.kpiItemCard}>
+                <div style={styles.kpiMeta}>
+                  <span style={styles.kpiName}>Temps de Trajet (Arc de 30km)</span>
+                  <span style={{...styles.kpiDeltaBadge, background:'#dcfce7', color:'#15803d'}}>
+                    {deltaTemps}%
+                  </span>
+                </div>
+                <div style={styles.kpiComparisonRow}>
+                  <div>
+                    <span style={styles.cmpLabel}>Modèle Actuel</span>
+                    <b style={styles.cmpValue}>{results?.baseline.tempsTrajet} min</b>
+                  </div>
+                  <div style={styles.cmpArrow}>➔</div>
+                  <div>
+                    <span style={styles.cmpLabel}>Horizon 2200</span>
+                    <b style={{...styles.cmpValue, color:'#10b981'}}>{results?.future.tempsTrajet} min</b>
+                  </div>
                 </div>
               </div>
             </div>
-          ))}
-        </div>
-      )}
-
-      {/* SECTION 3: PUPITRE DE CONTRÔLE QUANTIQUE */}
-      <h3 style={styles.consoleTitle}>🎛️ Pupitre de Contrôle Réseau (Simulation Directe)</h3>
-      <div style={styles.consoleGrid}>
-        
-        {/* Style d'animation injecté */}
-        <style>{`
-          @keyframes fly-capsule {
-            0% { left: -10%; }
-            100% { left: 110%; }
-          }
-          @keyframes fly-drone {
-            0% { left: -10%; top: 8px; }
-            50% { top: -6px; }
-            100% { left: 110%; top: 8px; }
-          }
-          .animate-capsule {
-            animation: fly-capsule linear infinite;
-          }
-          .animate-drone {
-            animation: fly-drone linear infinite;
-            animation-duration: 2.2s;
-            position: absolute;
-          }
-          @keyframes pulse-glow {
-            0%, 100% { opacity: 0.5; }
-            50% { opacity: 1; }
-          }
-        `}</style>
-
-        {/* Colonne Gauche: Hyperloop & Terminal */}
-        <div style={styles.consoleLeftCol}>
-          <HyperloopSimulator 
-            vitesse={currentFutureMetrics.vitesse} 
-            isMaglev={projects.maglev} 
-            isDrones={projects.drones} 
-          />
-          <QuantumTerminal 
-            scenario={scenario} 
-            projects={projects} 
-            heure={heure} 
-          />
-        </div>
-
-        {/* Colonne Droite: Gauges & Solar Charge */}
-        <div style={styles.consoleRightCol}>
-          <div style={styles.gaugesRow}>
-            <Speedometer 
-              value={currentFutureMetrics.vitesse} 
-              label="Vitesse Transit" 
-              max={600} 
-              color={projects.maglev ? '#10b981' : '#3b82f6'} 
-            />
-            <AirPurityGauge 
-              co2Value={currentFutureMetrics.co2} 
-              isFusion={projects.fusion} 
-            />
           </div>
-          <SolarChargeWidget 
-            efficiency={currentFutureMetrics.solar} 
-            isMaglev={projects.maglev} 
-          />
+
+          {/* GRAPHIQUE PRÉDICTIF RECHARTS */}
+          <div style={styles.chartPane}>
+            <div style={styles.chartPaneHeader}>
+              <h4 style={styles.paneMiniTitle}>Courbe Prédictive Temporelle (24 Heures)</h4>
+              <div style={styles.metricTabs}>
+                <button 
+                  onClick={() => setChartMetric('vitesse')}
+                  style={{...styles.metricTabBtn, ...(chartMetric === 'vitesse' ? styles.metricTabBtnActive : {})}}
+                >
+                  Vitesses
+                </button>
+                <button 
+                  onClick={() => setChartMetric('co2')}
+                  style={{...styles.metricTabBtn, ...(chartMetric === 'co2' ? styles.metricTabBtnActive : {})}}
+                >
+                  CO₂ Émis
+                </button>
+              </div>
+            </div>
+
+            <div style={styles.chartWrapper}>
+              <ResponsiveContainer width="100%" height={260}>
+                <AreaChart data={getChartData()} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorBaseline" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#3b82f6" stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor="#3b82f6" stopOpacity={0}/>
+                    </linearGradient>
+                    <linearGradient id="colorFuture" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.2}/>
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0}/>
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
+                  <XAxis dataKey="heure" stroke="#94a3b8" fontSize={10} tickLine={false} />
+                  <YAxis stroke="#94a3b8" fontSize={10} tickLine={false} />
+                  <Tooltip 
+                    contentStyle={{ background: '#0f172a', border: 'none', borderRadius: '8px', color: '#fff', fontSize: '12px' }}
+                    labelStyle={{ fontWeight: 'bold', color: '#10b981' }}
+                  />
+                  <Legend verticalAlign="top" height={36} iconType="circle" wrapperStyle={{ fontSize: '11px', fontWeight: 600 }} />
+                  <Area 
+                    name={chartMetric === 'vitesse' ? "Réseau Actuel (km/h)" : "Réseau Actuel (t/h)"} 
+                    type="monotone" 
+                    dataKey="baseline" 
+                    stroke="#3b82f6" 
+                    strokeWidth={2}
+                    fillOpacity={1} 
+                    fill="url(#colorBaseline)" 
+                  />
+                  <Area 
+                    name={chartMetric === 'vitesse' ? "Horizon 2200 (km/h)" : "Horizon 2200 (t/h)"} 
+                    type="monotone" 
+                    dataKey="future" 
+                    stroke="#10b981" 
+                    strokeWidth={3}
+                    fillOpacity={1} 
+                    fill="url(#colorFuture)" 
+                  />
+                </AreaChart>
+              </ResponsiveContainer>
+            </div>
+            <p style={styles.chartTip}>
+              * Le modèle Horizon 2200 amortit totalement les pics de saturation de 08h00 et 18h00 grâce à la gestion décentralisée des corridors et de la propulsion magnétique.
+            </p>
+          </div>
+
         </div>
-
       </div>
-
     </div>
   );
 }
 
 const styles = {
-  container: { display: 'flex', flexDirection: 'column', gap: '20px', paddingBottom: '20px' },
-  card: { background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '24px', boxShadow: '0 4px 6px -1px rgba(0,0,0,0.05)' },
-  cardTitle: { fontSize: '16px', fontWeight: 800, color: '#0f172a', marginBottom: '20px', borderBottom: '1px solid #f1f5f9', paddingBottom: '12px', margin: 0 },
-  grid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px' },
-  col: { display: 'flex', flexDirection: 'column', gap: '20px' },
-  subTitle: { fontSize: '13px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px' },
-  scenariosGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' },
-  scenarioBtn: { display: 'flex', alignItems: 'center', gap: '10px', padding: '12px', borderRadius: '12px', border: '1px solid #cbd5e1', background: '#f8fafc', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s' },
-  scenarioBtnActive: { border: '1px solid #2563eb', background: '#eff6ff', boxShadow: '0 0 10px rgba(37,99,235,0.08)' },
-  scIcon: { fontSize: '24px' },
+  container: { display: 'flex', flexDirection: 'column', gap: '24px', paddingBottom: '30px' },
+  
+  // Workstation Header
+  workstationHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '20px 24px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' },
+  wHeaderLeft: { display: 'flex', flexDirection: 'column' },
+  badgeSim: { background: '#f5f3ff', color: '#7c3aed', fontSize: '9px', fontWeight: 800, padding: '3px 8px', borderRadius: '30px', width: 'fit-content', letterSpacing: '0.8px', textTransform: 'uppercase', marginBottom: '8px' },
+  wTitle: { fontSize: '18px', fontWeight: 800, color: '#0f172a', margin: 0 },
+  wSubtitle: { fontSize: '12px', color: '#64748b', margin: '4px 0 0 0', fontWeight: 500 },
+  wHeaderRight: {},
+  serverStatusCard: { display: 'flex', alignItems: 'center', gap: '12px', background: '#f8fafc', border: '1px solid #e2e8f0', padding: '8px 16px', borderRadius: '12px' },
+  serverDot: { width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981' },
+  serverLabel: { fontSize: '9px', fontWeight: 800, color: '#94a3b8', letterSpacing: '0.5px' },
+  serverStatus: { fontSize: '11px', fontWeight: 700, color: '#0f172a', marginTop: '1px' },
+
+  // Grille principale
+  mainGrid: { display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '24px' },
+  leftPane: { display: 'flex', flexDirection: 'column', gap: '24px' },
+  rightPane: { display: 'flex', flexDirection: 'column' },
+
+  // Cartes de contrôle
+  controlCard: { background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '20px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' },
+  cardHeader: { display: 'flex', gap: '14px', alignItems: 'center', borderBottom: '1px solid #f1f5f9', paddingBottom: '14px', marginBottom: '16px' },
+  cardHeaderNumber: { fontSize: '18px', fontWeight: 900, color: '#cbd5e1', fontFamily: 'monospace' },
+  cardHeaderTitle: { fontSize: '13.5px', fontWeight: 800, color: '#0f172a', margin: 0 },
+  cardHeaderSubtitle: { fontSize: '11px', color: '#64748b', margin: '2px 0 0 0' },
+
+  // Scénarios
+  scenarioLabel: { fontSize: '11px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px' },
+  scenariosGrid: { display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' },
+  scenarioBtn: { display: 'flex', alignItems: 'center', gap: '10px', padding: '10px 12px', borderRadius: '10px', border: '1px solid #e2e8f0', background: '#f8fafc', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s', outline: 'none' },
+  scenarioBtnActive: { border: '1px solid #2563eb', background: '#eff6ff', boxShadow: '0 4px 12px rgba(37,99,235,0.08)' },
+  scIcon: { fontSize: '20px' },
   scText: { display: 'flex', flexDirection: 'column' },
-  scDesc: { fontSize: '10px', color: '#64748b', marginTop: '2px' },
-  sliderGroup: { display: 'flex', flexDirection: 'column', gap: '8px', marginTop: '8px' },
-  sliderLabel: { display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: 600, color: '#1e293b' },
+  scDesc: { fontSize: '9px', color: '#64748b', marginTop: '1px', lineHeight: 1.2 },
+
+  // Sliders
+  sliderGroup: { display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '16px' },
+  sliderLabel: { display: 'flex', justifyContent: 'space-between', fontSize: '11.5px', fontWeight: 700, color: '#475569' },
   slider: { width: '100%', cursor: 'pointer' },
-  sliderTicks: { display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#64748b' },
-  projectsWrapper: { display: 'flex', flexDirection: 'column', gap: '10px' },
-  projectToggle: { display: 'flex', alignItems: 'center', gap: '14px', padding: '12px 16px', borderRadius: '12px', border: '1px solid #cbd5e1', background: '#f8fafc', cursor: 'pointer', textAlign: 'left', transition: 'all 0.2s', width: '100%' },
-  projectToggleActive: { border: '1px solid #10b981', background: '#f0fdf4' },
-  toggleDot: { width: '12px', height: '12px', borderRadius: '50%', background: '#cbd5e1', border: '2px solid #ffffff', boxShadow: '0 0 0 1px #cbd5e1', flexShrink: 0, transition: 'all 0.2s' },
-  projectTitle: { fontSize: '12px', fontWeight: 700, color: '#0f172a' },
-  projectDesc: { fontSize: '10px', color: '#64748b', marginTop: '2px' },
-  chronoBox: { background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '16px', marginTop: '10px' },
-  chronoControls: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '14px' },
-  playBtn: { color: '#ffffff', border: 'none', padding: '8px 16px', borderRadius: '8px', fontSize: '12px', fontWeight: 700, cursor: 'pointer', minWidth: '80px', transition: 'all 0.2s' },
-  speedWrapper: { display: 'flex', gap: '4px', background: '#e2e8f0', padding: '2px', borderRadius: '6px' },
-  speedBtn: { border: 'none', background: 'transparent', padding: '4px 8px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', color: '#64748b', borderRadius: '4px' },
+  sliderTicks: { display: 'flex', justifyContent: 'space-between', fontSize: '9.5px', color: '#94a3b8', fontWeight: 500 },
+
+  // Chrono box
+  chronoBox: { background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '14px', marginTop: '16px' },
+  chronoTitle: { fontSize: '11.5px', fontWeight: 700, color: '#475569', marginBottom: '10px' },
+  chronoControls: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', marginBottom: '10px' },
+  playBtn: { color: '#ffffff', border: 'none', padding: '6px 12px', borderRadius: '6px', fontSize: '11px', fontWeight: 700, cursor: 'pointer', minWidth: '95px', transition: 'all 0.2s' },
+  speedWrapper: { display: 'flex', gap: '2px', background: '#e2e8f0', padding: '2px', borderRadius: '6px' },
+  speedBtn: { border: 'none', background: 'transparent', padding: '3px 6px', fontSize: '10px', fontWeight: 700, cursor: 'pointer', color: '#64748b', borderRadius: '4px' },
   speedBtnActive: { background: '#ffffff', color: '#0f172a', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' },
-  timeDisplay: { fontSize: '12px', fontWeight: 700, color: '#475569' },
-  kpiRow: { display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '16px' },
-  kpiCard: { background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '16px', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' },
-  kpiLabel: { fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '12px' },
-  kpiValuesGrid: { display: 'flex', alignItems: 'center', justifyContent: 'space-between' },
-  kpiValItem: { display: 'flex', flexDirection: 'column', gap: '2px' },
-  valTag: { fontSize: '9px', background: '#f1f5f9', color: '#475569', padding: '2px 6px', borderRadius: '4px', width: 'fit-content', fontWeight: 700 },
-  valText: { fontSize: '16px', fontWeight: 700, color: '#0f172a', marginTop: '2px' },
-  kpiValDivider: { width: '1px', height: '30px', background: '#e2e8f0' },
+  timeDisplay: { fontSize: '11.5px', fontWeight: 700, color: '#475569' },
+
+  // Technologies
+  projectsList: { display: 'flex', flexDirection: 'column', gap: '10px' },
+  projectRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '14px 16px', borderRadius: '12px', border: '1px solid #e2e8f0', transition: 'all 0.3s' },
+  projectInfo: { display: 'flex', flexDirection: 'column', gap: '3px', paddingRight: '12px' },
+  projectEmoji: { fontSize: '18px' },
+  projTitle: { fontSize: '12px', fontWeight: 800, color: '#0f172a' },
+  projDesc: { fontSize: '10px', color: '#64748b', margin: 0, lineHeight: 1.3 },
+  toggleBtn: { width: '40px', height: '20px', borderRadius: '30px', border: 'none', cursor: 'pointer', position: 'relative', transition: 'all 0.3s', padding: 0 },
+  toggleIndicator: { width: '16px', height: '16px', borderRadius: '50%', background: '#ffffff', position: 'absolute', top: '2px', transition: 'transform 0.2s' },
+
+  // Telemetry (Mission control panel dark)
+  telemetryWorkspace: { background: '#0f172a', border: '1px solid #1e293b', borderRadius: '16px', display: 'flex', flexDirection: 'column', flex: 1, boxShadow: '0 4px 20px rgba(15,23,42,0.15)', overflow: 'hidden' },
+  telemetryHeader: { background: '#070b19', padding: '12px 18px', display: 'flex', alignItems: 'center', gap: '10px', borderBottom: '1px solid #1e293b' },
+  telHeaderDot: { width: '6px', height: '6px', borderRadius: '50%', background: '#f59e0b', boxShadow: '0 0 6px #f59e0b' },
+  telHeaderTitle: { fontSize: '10px', color: '#94a3b8', fontWeight: 800, letterSpacing: '0.8px' },
   
-  // Nouveaux styles pour le pupitre quantique 2200
-  consoleTitle: { fontSize: '13px', fontWeight: 700, color: '#475569', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '20px 0 0 0' },
-  consoleGrid: { display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '20px', marginTop: '10px' },
-  consoleLeftCol: { display: 'flex', flexDirection: 'column', gap: '20px' },
-  consoleRightCol: { display: 'flex', flexDirection: 'column', gap: '20px' },
-  gaugesRow: { display: 'flex', gap: '20px', justifyContent: 'space-between' },
-  
-  hyperloopContainer: { background: '#0f172a', border: '1px solid #334155', borderRadius: '16px', padding: '20px', display: 'flex', flexDirection: 'column', gap: '14px' },
-  hyperloopTrack: { height: '50px', background: '#070b19', borderRadius: '10px', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', border: '1px solid #1e293b' },
-  hyperloopLaser: { position: 'absolute', left: 0, right: 0, height: '2px', top: '24px' },
-  hyperloopCapsule: { position: 'absolute', width: '32px', height: '20px', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
-  hyperloopStatus: { display: 'flex', justifyContent: 'space-between', fontSize: '12px' },
-  
-  gaugeCard: { display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#0f172a', border: '1px solid #334155', borderRadius: '16px', padding: '16px', position: 'relative', flex: 1, minHeight: '135px' },
-  gaugeValue: { position: 'absolute', top: '42px', fontSize: '20px', fontWeight: 800, color: '#ffffff', fontFamily: 'monospace' },
-  gaugeUnit: { position: 'absolute', top: '68px', fontSize: '8px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' },
-  gaugeLabel: { fontSize: '11px', fontWeight: 700, color: '#94a3b8', marginTop: '14px', textAlign: 'center' },
-  
-  chargeWidgetCard: { background: '#0f172a', border: '1px solid #334155', borderRadius: '16px', padding: '20px' },
+  telemetryGrid: { display: 'grid', gridTemplateColumns: '1.1fr 0.9fr', gap: '16px', padding: '0 20px 20px 20px' },
+  telemetryCol: { display: 'flex', flexDirection: 'column', gap: '16px' },
+  gaugesContainer: { display: 'flex', gap: '14px', width: '100%' },
+
+  hyperloopContainer: { background: '#070b19', border: '1px solid #1e293b', borderRadius: '12px', padding: '14px', display: 'flex', flexDirection: 'column', gap: '10px' },
+  hyperloopTrack: { height: '36px', background: '#030712', borderRadius: '8px', position: 'relative', overflow: 'hidden', display: 'flex', alignItems: 'center', border: '1px solid #111827' },
+  hyperloopLaser: { position: 'absolute', left: 0, right: 0, height: '1.5px', top: '17px' },
+  hyperloopCapsule: { position: 'absolute', width: '26px', height: '16px', borderRadius: '4px', display: 'flex', alignItems: 'center', justifyContent: 'center' },
+  hyperloopStatus: { display: 'flex', justifyContent: 'space-between', fontSize: '11px' },
+
+  gaugeCard: { display: 'flex', flexDirection: 'column', alignItems: 'center', background: '#070b19', border: '1px solid #1e293b', borderRadius: '12px', padding: '12px', position: 'relative', flex: 1, minHeight: '125px' },
+  gaugeValue: { position: 'absolute', top: '38px', fontSize: '18px', fontWeight: 800, color: '#ffffff', fontFamily: 'monospace' },
+  gaugeUnit: { position: 'absolute', top: '62px', fontSize: '8px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 700, letterSpacing: '0.5px' },
+  gaugeLabel: { fontSize: '10px', fontWeight: 700, color: '#94a3b8', marginTop: '10px', textAlign: 'center' },
+
+  chargeWidgetCard: { background: '#070b19', border: '1px solid #1e293b', borderRadius: '12px', padding: '16px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', height: '100%' },
   chargeHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center' },
-  chargeBarOuter: { height: '10px', background: '#070b19', borderRadius: '5px', overflow: 'hidden', marginTop: '10px', border: '1px solid #1e293b' },
-  chargeBarInner: { height: '100%', borderRadius: '5px' },
+  chargeBarOuter: { height: '8px', background: '#030712', borderRadius: '4px', overflow: 'hidden', marginTop: '10px', border: '1px solid #111827' },
+  chargeBarInner: { height: '100%', borderRadius: '4px' },
+
+  terminalContainer: { background: '#070b19', border: '1px solid #1e293b', borderRadius: '12px', overflow: 'hidden' },
+  terminalHeader: { background: '#0b1329', padding: '6px 12px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #1e293b' },
+  terminalDot: { width: '6px', height: '6px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 6px #10b981' },
+  terminalBody: { padding: '12px', display: 'flex', flexDirection: 'column', gap: '6px', minHeight: '92px' },
+
+  // SECTION COMPARAISONS & GRAPHIQUE
+  analyticsSection: { background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '24px', boxShadow: '0 1px 3px rgba(0,0,0,0.02)' },
+  analyticsTitleCard: { borderBottom: '1px solid #f1f5f9', paddingBottom: '14px', marginBottom: '20px' },
+  analyticsSectionTitle: { fontSize: '14px', fontWeight: 800, color: '#0f172a', margin: 0 },
+  analyticsSectionSubtitle: { fontSize: '11px', color: '#64748b', margin: '4px 0 0 0' },
+
+  analyticsGrid: { display: 'grid', gridTemplateColumns: '1.2fr 1.8fr', gap: '24px' },
   
-  terminalContainer: { background: '#070b19', border: '1px solid #334155', borderRadius: '16px', overflow: 'hidden' },
-  terminalHeader: { background: '#0f172a', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px', borderBottom: '1px solid #1e293b' },
-  terminalDot: { width: '8px', height: '8px', borderRadius: '50%', background: '#10b981', boxShadow: '0 0 8px #10b981' },
-  terminalBody: { padding: '16px', display: 'flex', flexDirection: 'column', gap: '8px', minHeight: '112px' }
+  kpisPane: { display: 'flex', flexDirection: 'column' },
+  paneMiniTitle: { fontSize: '12px', fontWeight: 800, color: '#475569', margin: '0 0 14px 0' },
+  
+  kpisVerticalList: { display: 'flex', flexDirection: 'column', gap: '10px' },
+  kpiItemCard: { background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '12px 16px' },
+  kpiMeta: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' },
+  kpiName: { fontSize: '11px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.3px' },
+  kpiDeltaBadge: { fontSize: '9px', fontWeight: 800, padding: '2px 6px', borderRadius: '4px' },
+  kpiComparisonRow: { display: 'flex', alignItems: 'center', gap: '12px' },
+  cmpLabel: { fontSize: '8px', color: '#94a3b8', textTransform: 'uppercase', display: 'block' },
+  cmpValue: { fontSize: '14px', fontWeight: 700, color: '#1e293b' },
+  cmpArrow: { color: '#94a3b8', fontSize: '12px', fontWeight: 'bold' },
+
+  chartPane: { display: 'flex', flexDirection: 'column' },
+  chartPaneHeader: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '14px' },
+  metricTabs: { display: 'flex', background: '#f1f5f9', padding: '2px', borderRadius: '6px' },
+  metricTabBtn: { border: 'none', background: 'transparent', padding: '4px 10px', fontSize: '10px', fontWeight: 700, cursor: 'pointer', color: '#64748b', borderRadius: '4px' },
+  metricTabBtnActive: { background: '#ffffff', color: '#2563eb', boxShadow: '0 1px 2px rgba(0,0,0,0.05)' },
+  chartWrapper: { background: '#ffffff', border: '1px solid #f1f5f9', borderRadius: '12px', padding: '10px 4px 4px 4px' },
+  chartTip: { fontSize: '10px', color: '#94a3b8', fontStyle: 'italic', marginTop: '10px', textAlign: 'right', margin: '8px 0 0 0' }
 };
