@@ -338,7 +338,7 @@ export default function DashboardPage({ trafic, transports, air, stats, alertes,
                     </span>
                   </div>
                   <div style={{ color: '#8c857b', fontSize: '11px', marginTop: '4px' }}>
-                    {t.description || 'Circulation fluide sur l\'ensemble de la ligne.'}
+                    {t.message || 'Circulation fluide sur l\'ensemble de la ligne.'}
                   </div>
                 </div>
               ))}
