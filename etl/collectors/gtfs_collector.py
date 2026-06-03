@@ -48,7 +48,16 @@ MAJOR_LINES = {
 }
 
 def parse_disruption_line(title):
-    title_upper = title.upper()
+    # Remove calendar dates (e.g. "29 mai", "18/05") to avoid mistaking day numbers for line numbers
+    title_clean = re.sub(
+        r"\b\d+\s*(?:janvier|f[eé]vrier|mars|avril|mai|juin|juillet|ao[uû]t|septembre|octobre|novembre|d[eé]cembre)\b",
+        "",
+        title,
+        flags=re.IGNORECASE
+    )
+    title_clean = re.sub(r"\b\d{1,2}[/-]\d{1,2}(?:[/-]\d{2,4})?\b", "", title_clean)
+    
+    title_upper = title_clean.upper()
     
     # 1. Détecter le type de transport par mots-clés ou émojis
     inferred_type = None
@@ -68,6 +77,11 @@ def parse_disruption_line(title):
     for letter in ['A', 'B', 'C', 'D', 'E']:
         if f"RER {letter}" in title_upper or f"RER{letter}" in title_upper:
             return f"RER {letter}", "RER"
+
+    # Train lines (Transilien H, J, K, L, N, P, R, U)
+    for letter in ['H', 'J', 'K', 'L', 'N', 'P', 'R', 'U']:
+        if f"LIGNE {letter}" in title_upper or f"LIGNE{letter}" in title_upper or f"TRAIN {letter}" in title_upper:
+            return f"Ligne {letter}", "Train"
             
     # Métros
     metro_match = re.search(r"\b(?:MÉTRO|METRO)\s*(\d+)\b", title_upper)
