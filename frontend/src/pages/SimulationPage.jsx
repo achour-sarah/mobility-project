@@ -1,28 +1,39 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid, ReferenceLine } from 'recharts';
 
-// Génère les données de projection sur 10 ans (2026 à 2036)
+// Génère les données de projection jusqu'en 2200
 const generateProjectionData = (energySource, electricPercent) => {
   const data = [];
   
-  for (let year = 2026; year <= 2036; year++) {
-    const progressRatio = (year - 2026) / 10; // 0 à 1
+  for (let year = 2026; year <= 2200; year++) {
+    // La transition prend environ 30 ans pour se stabiliser (d'ici 2056),
+    // après quoi les politiques restent constantes.
+    const progressRatio = Math.min(1.0, (year - 2026) / 30);
     
     // Impact Industriel
     let indPollution = 40;
     if (energySource === 'fossile') {
-      indPollution += progressRatio * 20; // Monte à 60
+      indPollution += progressRatio * 25; // Monte à 65
     } else if (energySource === 'mixte') {
-      indPollution -= progressRatio * 10; // Descend à 30
+      indPollution -= progressRatio * 15; // Descend à 25
     } else { // solaire
-      indPollution -= progressRatio * 32; // Descend à 8
+      indPollution -= progressRatio * 34; // Descend à 6
     }
     
-    // Impact Routier (basé sur la progression linéaire de l'électrification choisie)
+    // Impact Routier (basé sur l'électrification progressive)
     const currentElec = 5 + progressRatio * (electricPercent - 5);
     const trafPollution = 45 * (1 - currentElec / 100) + 5; // Descend à 5 si 100% élec
     
-    const totalPollution = Math.max(5, Math.round(indPollution + trafPollution));
+    // Après 2056, si le mix est solaire et l'élec est élevée, l'air s'assainit encore plus
+    let naturalRecovery = 0;
+    if (year > 2056) {
+      const yearsPost = year - 2056;
+      if (energySource === 'solaire' && electricPercent >= 70) {
+        naturalRecovery = Math.min(10, yearsPost * 0.08);
+      }
+    }
+    
+    const totalPollution = Math.max(2, Math.round(indPollution + trafPollution - naturalRecovery));
     
     data.push({
       year: String(year),
@@ -148,13 +159,13 @@ export default function SimulationPage() {
     if (isPlaying) {
       timerRef.current = setInterval(() => {
         setSelectedYear(y => {
-          if (y >= 2036) {
+          if (y >= 2200) {
             setIsPlaying(false);
             return 2026;
           }
-          return y + 1;
+          return Math.min(2200, y + 5);
         });
-      }, 1000);
+      }, 400); // 400ms pour un défilement rapide et fluide
     } else {
       if (timerRef.current) clearInterval(timerRef.current);
     }
@@ -181,7 +192,7 @@ export default function SimulationPage() {
       <div style={styles.header}>
         <h2 style={styles.title}>🌱 Simulateur de Transition Énergétique & Qualité de l'Air</h2>
         <p style={styles.subtitle}>
-          Visualisez l'impact de nos choix énergétiques et du taux de voitures électriques sur la pollution de Paris de 2026 à 2036.
+          Visualisez l'impact de nos choix énergétiques et du taux de voitures électriques sur la pollution de Paris de 2026 à 2200.
         </p>
       </div>
 
@@ -246,7 +257,7 @@ export default function SimulationPage() {
             <div style={styles.stepDivider} />
 
             <div style={styles.stepTitle}>Étape 2 : Électrification des transports</div>
-            <p style={styles.stepDesc}>Définissez la part de voitures électriques en circulation en Île-de-France d'ici 2036.</p>
+            <p style={styles.stepDesc}>Définissez la part de voitures électriques en circulation en Île-de-France d'ici 2200.</p>
 
             <div style={styles.sliderBox}>
               <div style={styles.sliderHeader}>
@@ -283,7 +294,7 @@ export default function SimulationPage() {
                 </span>
               </div>
               <input 
-                type="range" min={2026} max={2036} step={1}
+                type="range" min={2026} max={2200} step={1}
                 value={selectedYear} onChange={e => { setSelectedYear(+e.target.value); setIsPlaying(false); }}
                 style={styles.slider}
               />
@@ -299,7 +310,7 @@ export default function SimulationPage() {
           {/* Graphique d'Évolution 10 ans */}
           <div style={styles.chartCard}>
             <div style={styles.chartHeader}>
-              <h3 style={styles.chartTitle}>Évolution de l'Indice de Pollution (2026 - 2036)</h3>
+              <h3 style={styles.chartTitle}>Évolution de l'Indice de Pollution (2026 - 2200)</h3>
               <span style={styles.chartTip}>Indice de 0 (Parfait) à 100 (Critique)</span>
             </div>
             
