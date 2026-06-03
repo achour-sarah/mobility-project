@@ -1,5 +1,6 @@
 from flask import Blueprint, jsonify
 from etl.db import execute_pg
+from backend.routes.meteo import ensure_weather_fresh
 
 stats_bp = Blueprint("stats", __name__)
 
@@ -7,6 +8,7 @@ stats_bp = Blueprint("stats", __name__)
 @stats_bp.route("/stats", methods=["GET"])
 def get_stats():
     """Retourne les KPIs globaux pour le dashboard."""
+    ensure_weather_fresh()
 
     # Trafic moyen
     trafic = execute_pg(
