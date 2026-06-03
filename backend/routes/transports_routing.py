@@ -154,6 +154,28 @@ def calculate_route():
             }
             for r in rows
         ]
+        
+        # Associer les perturbations actives de la base de données
+        for trip in direct_trips:
+            ligne_name = trip["ligne"]
+            pert = execute_pg(
+                """
+                SELECT statut, message
+                FROM transports_perturbations
+                WHERE (ligne = %s OR ligne = %s OR ligne = %s)
+                  AND statut IN ('perturbé', 'interrompu')
+                  AND collecte_at >= (SELECT COALESCE(MAX(collecte_at), NOW()) FROM transports_perturbations) - INTERVAL '2 hour'
+                ORDER BY collecte_at DESC
+                LIMIT 1
+                """,
+                (ligne_name, f"Bus {ligne_name}", f"M{ligne_name}"),
+                fetch=True
+            )
+            if pert:
+                trip["perturbation"] = {
+                    "statut": pert[0]["statut"],
+                    "message": pert[0]["message"]
+                }
     except Exception as e:
         # En cas d'erreur de base de données, on logge mais on ne bloque pas le calcul de distance
         print(f"Erreur recherche GTFS: {e}")

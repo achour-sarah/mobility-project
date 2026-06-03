@@ -259,14 +259,33 @@ export default function RecoPage({ trafic, transports, air, meteo }) {
                   <div style={styles.gtfsList}>
                     {result.direct_transit.map((t, idx) => (
                       <div key={idx} style={styles.gtfsItem}>
-                        <div style={styles.gtfsLine}>
-                          <span style={styles.gtfsTypeBadge}>{t.type}</span>
-                          <b style={styles.gtfsLineName}>{t.ligne}</b>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', width: '100%', flexWrap: 'wrap', gap: '10px' }}>
+                          <div style={styles.gtfsLine}>
+                            <span style={styles.gtfsTypeBadge}>{t.type}</span>
+                            <b style={styles.gtfsLineName}>{t.ligne}</b>
+                          </div>
+                          <div style={styles.gtfsRouteDesc}>Direction : {t.direction}</div>
+                          <div style={styles.gtfsTimes}>
+                            🕒 <b>{t.depart}</b> → <b>{t.arrivee}</b>
+                          </div>
                         </div>
-                        <div style={styles.gtfsRouteDesc}>Direction : {t.direction}</div>
-                        <div style={styles.gtfsTimes}>
-                          🕒 <b>{t.depart}</b> → <b>{t.arrivee}</b>
-                        </div>
+                        {t.perturbation && (
+                          <div style={{
+                            marginTop: '10px',
+                            padding: '10px 14px',
+                            background: '#fee2e2',
+                            borderLeft: '4px solid #ef4444',
+                            borderRadius: '6px',
+                            color: '#991b1b',
+                            fontSize: '11.5px',
+                            lineHeight: '1.4',
+                            width: '100%',
+                            textAlign: 'left',
+                            boxSizing: 'border-box'
+                          }}>
+                            ⚠️ <b>Alerte perturbation ({t.perturbation.statut.toUpperCase()}) :</b> {t.perturbation.message}
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
