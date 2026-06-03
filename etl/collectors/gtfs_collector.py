@@ -127,6 +127,122 @@ def parse_disruption_line(title):
     return "Autre", "Autre"
 
 
+MONTH_MAP = {
+    "janvier": 1, "jan": 1,
+    "fevrier": 2, "février": 2, "fev": 2,
+    "mars": 3, "mar": 3,
+    "avril": 4, "avr": 4,
+    "mai": 5,
+    "juin": 6,
+    "juillet": 7, "juil": 7,
+    "aout": 8, "août": 8,
+    "septembre": 9, "sept": 9, "sep": 9,
+    "octobre": 10, "oct": 10,
+    "novembre": 11, "nov": 11,
+    "decembre": 12, "décembre": 12, "dec": 12
+}
+
+def parse_dates_from_text(text: str):
+    if not text:
+        return None, None
+    debut_at = None
+    fin_at = None
+    text_lower = text.lower()
+    
+    # 1. Quand : dimanche 7 juin 2026, de 11h00 à 13h00
+    quand_pattern = r"quand\s*:\s*(?:[a-zà-ÿ]+)?\s*(\d{1,2})\s*([a-zà-ÿ]+)\s*(\d{4})?,?\s*(?:de|à partir de)\s*(\d{1,2})[h:](\d{2})?\s*(?:à|au)\s*(\d{1,2})[h:](\d{2})?"
+    m_quand = re.search(quand_pattern, text_lower)
+    if m_quand:
+        day = int(m_quand.group(1))
+        month_str = m_quand.group(2)
+        year_str = m_quand.group(3)
+        h1 = int(m_quand.group(4))
+        m1 = int(m_quand.group(5)) if m_quand.group(5) else 0
+        h2 = int(m_quand.group(6))
+        m2 = int(m_quand.group(7)) if m_quand.group(7) else 0
+        
+        month = MONTH_MAP.get(month_str, 6)
+        year = int(year_str) if year_str else 2026
+        
+        try:
+            debut_at = datetime(year, month, day, h1, m1, tzinfo=timezone.utc)
+            fin_at = datetime(year, month, day, h2, m2, tzinfo=timezone.utc)
+            return debut_at, fin_at
+        except ValueError:
+            pass
+
+    # 2. Du lundi 18 Mai au dimanche 05 Juillet 2026
+    du_au_pattern = r"du\s*(?:[a-zà-ÿ]+)?\s*(\d{1,2})\s*([a-zà-ÿ]+)\s*(\d{4})?\s*(?:au|à)\s*(?:[a-zà-ÿ]+)?\s*(\d{1,2})\s*([a-zà-ÿ]+)\s*(\d{4})?"
+    m_du_au = re.search(du_au_pattern, text_lower)
+    if m_du_au:
+        day1 = int(m_du_au.group(1))
+        month1_str = m_du_au.group(2)
+        year1_str = m_du_au.group(3)
+        
+        day2 = int(m_du_au.group(4))
+        month2_str = m_du_au.group(5)
+        year2_str = m_du_au.group(6)
+        
+        month1 = MONTH_MAP.get(month1_str, 5)
+        month2 = MONTH_MAP.get(month2_str, 7)
+        
+        year2 = int(year2_str) if year2_str else 2026
+        year1 = int(year1_str) if year1_str else year2
+        
+        try:
+            debut_at = datetime(year1, month1, day1, 0, 0, tzinfo=timezone.utc)
+            fin_at = datetime(year2, month2, day2, 23, 59, tzinfo=timezone.utc)
+            return debut_at, fin_at
+        except ValueError:
+            pass
+            
+    # 3. du 07/06/2026 au 09/06/2026
+    slash_pattern = r"du\s*(\d{1,2})[/-](\d{1,2})(?:[/-](\d{2,4}))?\s*(?:au|à)\s*(\d{1,2})[/-](\d{1,2})(?:[/-](\d{2,4}))?"
+    m_slash = re.search(slash_pattern, text_lower)
+    if m_slash:
+        day1 = int(m_slash.group(1))
+        month1 = int(m_slash.group(2))
+        year1_str = m_slash.group(3)
+        
+        day2 = int(m_slash.group(4))
+        month2 = int(m_slash.group(5))
+        year2_str = m_slash.group(6)
+        
+        year2 = int(year2_str) if year2_str else 2026
+        if year2 < 100:
+            year2 += 2000
+        year1 = int(year1_str) if year1_str else year2
+        if year1 < 100:
+            year1 += 2000
+            
+        try:
+            debut_at = datetime(year1, month1, day1, 0, 0, tzinfo=timezone.utc)
+            fin_at = datetime(year2, month2, day2, 23, 59, tzinfo=timezone.utc)
+            return debut_at, fin_at
+        except ValueError:
+            pass
+
+    # 4. le dimanche 7 juin 2026
+    le_pattern = r"le\s*(?:[a-zà-ÿ]+)?\s*(\d{1,2})\s*([a-zà-ÿ]+)(?:\s*(\d{4}))?"
+    m_le = re.search(le_pattern, text_lower)
+    if m_le:
+        day = int(m_le.group(1))
+        month_str = m_le.group(2)
+        year_str = m_le.group(3)
+        
+        month = MONTH_MAP.get(month_str)
+        if month:
+            year = int(year_str) if year_str else 2026
+            try:
+                debut_at = datetime(year, month, day, 0, 0, tzinfo=timezone.utc)
+                fin_at = datetime(year, month, day, 23, 59, tzinfo=timezone.utc)
+                return debut_at, fin_at
+            except ValueError:
+                pass
+
+    return None, None
+
+
 def parse_api_date(date_str):
     if not date_str:
         return None
@@ -204,13 +320,15 @@ def collect_gtfs() -> int:
         if line == "Autre" or trans_type == "Autre":
             continue
 
-        # Extraction des périodes
-        periods = disp.get("applicationPeriods", [])
-        debut_at = None
-        fin_at = None
-        if periods:
-            debut_at = parse_api_date(periods[0].get("begin"))
-            fin_at = parse_api_date(periods[0].get("end"))
+        # Extraction des périodes (priorité à l'analyse du texte)
+        text_to_parse = f"{title} - {clean_msg}"
+        debut_at, fin_at = parse_dates_from_text(text_to_parse)
+        
+        if not debut_at or not fin_at:
+            periods = disp.get("applicationPeriods", [])
+            if periods:
+                debut_at = parse_api_date(periods[0].get("begin"))
+                fin_at = parse_api_date(periods[0].get("end"))
 
         record = {
             "ligne": line,

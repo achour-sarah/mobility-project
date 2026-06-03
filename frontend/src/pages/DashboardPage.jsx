@@ -52,6 +52,25 @@ export default function DashboardPage({ trafic, transports, air, stats, alertes,
   const [co2Live, setCo2Live] = useState(0);
   const [selectedPeriod, setSelectedPeriod] = useState('Tous');
   
+  // Tri chronologique des semaines par date minimum associée
+  const getSortedWeeks = () => {
+    if (!transports || transports.length === 0) return [];
+    const weekMinDates = {};
+    transports.forEach(t => {
+      const wName = getWeekName(t.debut_at);
+      const dVal = t.debut_at ? new Date(t.debut_at).getTime() : 0;
+      if (weekMinDates[wName] === undefined || dVal < weekMinDates[wName]) {
+        weekMinDates[wName] = dVal;
+      }
+    });
+
+    return Object.keys(weekMinDates).sort((a, b) => {
+      if (a === "Semaine Courante") return -1;
+      if (b === "Semaine Courante") return 1;
+      return weekMinDates[a] - weekMinDates[b];
+    });
+  };
+  
   // États pour l'apprentissage IA en direct
   const [isTraining, setIsTraining] = useState(false);
   const [trainProgress, setTrainProgress] = useState(0);
@@ -341,7 +360,7 @@ export default function DashboardPage({ trafic, transports, air, stats, alertes,
             {/* Filtres par Période / Semaine */}
             {transports && transports.length > 0 && (
               <div style={styles.periodPillsContainer}>
-                {['Tous', ...new Set(transports.map(t => getWeekName(t.debut_at)))].map(p => (
+                {['Tous', ...getSortedWeeks()].map(p => (
                   <button
                     key={p}
                     onClick={() => setSelectedPeriod(p)}
@@ -360,8 +379,13 @@ export default function DashboardPage({ trafic, transports, air, stats, alertes,
             )}
 
             <div style={styles.alertesList}>
-              {transports && transports
+              {transports && [...transports]
                 .filter(t => selectedPeriod === 'Tous' || getWeekName(t.debut_at) === selectedPeriod)
+                .sort((a, b) => {
+                  const da = a.debut_at ? new Date(a.debut_at).getTime() : 0;
+                  const db = b.debut_at ? new Date(b.debut_at).getTime() : 0;
+                  return da - db;
+                })
                 .map((t, idx) => (
                 <div key={idx} style={{
                   ...styles.alertItem,
