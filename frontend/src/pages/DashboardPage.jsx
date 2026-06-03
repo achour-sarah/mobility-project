@@ -29,9 +29,28 @@ const MOCK_STATIONS = [
   { name: 'Montparnasse', code: 'MPN' }
 ];
 
+// Helper pour obtenir le libellé de la semaine à partir d'une date ISO
+const getWeekName = (dateStr) => {
+  if (!dateStr) return "Semaine Courante";
+  const d = new Date(dateStr);
+  if (isNaN(d.getTime())) return "Semaine Courante";
+  
+  const date = new Date(d.getTime());
+  date.setHours(0, 0, 0, 0);
+  date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
+  const week1 = new Date(date.getFullYear(), 0, 4);
+  const weekNum = 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000 - 3 + (week1.getDay() + 6) % 7) / 7);
+  
+  const months = ["Janvier", "Février", "Mars", "Avril", "Mai", "Juin", "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre"];
+  const monthName = months[d.getMonth()];
+  
+  return `Semaine ${weekNum} (${monthName} ${d.getFullYear()})`;
+};
+
 export default function DashboardPage({ trafic, transports, air, stats, alertes, meteo }) {
   const [predData, setPredData] = useState(null);
   const [co2Live, setCo2Live] = useState(0);
+  const [selectedPeriod, setSelectedPeriod] = useState('Tous');
   
   // États pour l'apprentissage IA en direct
   const [isTraining, setIsTraining] = useState(false);
@@ -318,8 +337,32 @@ export default function DashboardPage({ trafic, transports, air, stats, alertes,
           {/* ÉTAT DU RÉSEAU FERRÉ */}
           <div className="nude-card" style={styles.lightCard}>
             <div style={styles.chartTitle}>🚆 Alertes et Lignes de Transport</div>
+            
+            {/* Filtres par Période / Semaine */}
+            {transports && transports.length > 0 && (
+              <div style={styles.periodPillsContainer}>
+                {['Tous', ...new Set(transports.map(t => getWeekName(t.debut_at)))].map(p => (
+                  <button
+                    key={p}
+                    onClick={() => setSelectedPeriod(p)}
+                    className="btn-nude"
+                    style={{
+                      ...styles.periodPill,
+                      background: selectedPeriod === p ? '#4e8a5e' : '#f0f4f1',
+                      color: selectedPeriod === p ? '#ffffff' : '#4e8a5e',
+                      fontWeight: selectedPeriod === p ? 700 : 500,
+                    }}
+                  >
+                    {p}
+                  </button>
+                ))}
+              </div>
+            )}
+
             <div style={styles.alertesList}>
-              {transports && transports.map((t, idx) => (
+              {transports && transports
+                .filter(t => selectedPeriod === 'Tous' || getWeekName(t.debut_at) === selectedPeriod)
+                .map((t, idx) => (
                 <div key={idx} style={{
                   ...styles.alertItem,
                   borderLeftColor: t.statut === 'fluide' ? '#b7b7a4' : t.statut === 'interrompu' ? '#e07a5f' : '#d4a373'
@@ -393,5 +436,7 @@ const styles = {
   crowdBadge: { fontSize: '10px', fontWeight: 800, padding: '4px 10px', borderRadius: '8px' },
   
   alertesList: { display: 'flex', flexDirection: 'column', gap: '12px', maxHeight: '300px', overflowY: 'auto' },
-  alertItem: { padding: '12px 16px', borderRadius: '12px', borderLeft: '4px solid', background: '#f2faf4', border: '1px solid #dceede', borderLeftWidth: '4px' }
+  alertItem: { padding: '12px 16px', borderRadius: '12px', borderLeft: '4px solid', background: '#f2faf4', border: '1px solid #dceede', borderLeftWidth: '4px' },
+  periodPillsContainer: { display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '8px', marginTop: '12px', marginBottom: '16px' },
+  periodPill: { border: 'none', padding: '6px 14px', borderRadius: '20px', cursor: 'pointer', fontSize: '11px', transition: 'all 0.2s', whiteSpace: 'nowrap', outline: 'none' }
 };

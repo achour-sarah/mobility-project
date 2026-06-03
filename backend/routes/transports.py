@@ -11,7 +11,7 @@ def get_transports():
         """
         SELECT DISTINCT ON (ligne)
             ligne, type_transport, statut,
-            message, collecte_at
+            message, debut_at, fin_at, collecte_at
         FROM transports_perturbations
         WHERE collecte_at >= (SELECT COALESCE(MAX(collecte_at), NOW()) FROM transports_perturbations) - INTERVAL '10 seconds'
         ORDER BY ligne, collecte_at DESC
@@ -24,6 +24,8 @@ def get_transports():
         "type_transport": r["type_transport"],
         "statut":         r["statut"],
         "message":        r["message"],
+        "debut_at":       str(r["debut_at"]) if r["debut_at"] else None,
+        "fin_at":         str(r["fin_at"]) if r["fin_at"] else None,
         "collecte_at":    str(r["collecte_at"]),
     } for r in rows]
 
@@ -49,7 +51,7 @@ def get_perturbations_actives():
     rows = execute_pg(
         """
         SELECT DISTINCT ON (ligne)
-            ligne, type_transport, statut, message, collecte_at
+            ligne, type_transport, statut, message, debut_at, fin_at, collecte_at
         FROM transports_perturbations
         WHERE statut IN ('perturbé', 'interrompu')
           AND collecte_at >= (SELECT COALESCE(MAX(collecte_at), NOW()) FROM transports_perturbations) - INTERVAL '10 seconds'
@@ -63,6 +65,8 @@ def get_perturbations_actives():
         "type_transport": r["type_transport"],
         "statut":         r["statut"],
         "message":        r["message"],
+        "debut_at":       str(r["debut_at"]) if r["debut_at"] else None,
+        "fin_at":         str(r["fin_at"]) if r["fin_at"] else None,
         "collecte_at":    str(r["collecte_at"]),
     } for r in rows]
 
