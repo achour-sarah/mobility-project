@@ -37,7 +37,7 @@ COLLECTORS = {
 
 
 def run_once_all():
-    logger.info("═══ RUN ONCE — tous les collecteurs ═══")
+    logger.info("=== RUN ONCE - tous les collecteurs ===")
     for name, cfg in COLLECTORS.items():
         try:
             t0 = time.time()
@@ -50,7 +50,7 @@ def run_once_all():
 
 
 def _loop(name, fn, interval, stop):
-    logger.info("[%s] démarré — toutes les %ds", name.upper(), interval)
+    logger.info("[%s] demarre - toutes les %ds", name.upper(), interval)
     while not stop.is_set():
         try:
             fn()
@@ -71,7 +71,7 @@ def run_realtime():
         )
         threads.append(t)
         t.start()
-    logger.info("Pipeline temps réel actif — Ctrl+C pour arrêter")
+    logger.info("Pipeline temps reel actif - Ctrl+C pour arreter")
     try:
         while True:
             time.sleep(5)

@@ -1,13 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { searchStops, calculateRoute } from '../api';
 
-const BADGES = [
-  { id: 'velotaf', label: 'Vélo-Taf', icon: '🚲', desc: 'A accompli 5 trajets à vélo pour se rendre au travail.', unlocked: true },
-  { id: 'zero_co2', label: 'Zéro Carbone', icon: '🍃', desc: 'A totalisé moins de 5kg de CO2 rejeté cette semaine.', unlocked: true },
-  { id: 'metro_pro', label: 'Métropolitain', icon: '🚇', desc: 'A emprunté les transports ferrés 10 fois dans le mois.', unlocked: false },
-  { id: 'covoit', label: 'Éco-Pilote', icon: '🚗', desc: 'A partagé son véhicule avec au moins 2 passagers.', unlocked: false }
-];
-
 export default function RecoPage({ trafic, transports, air, meteo }) {
   // Recherche d'arrêts
   const [fromQuery, setFromQuery] = useState('');
@@ -29,21 +22,13 @@ export default function RecoPage({ trafic, transports, air, meteo }) {
   const [userLevel, setUserLevel] = useState(() => {
     return parseInt(localStorage.getItem('eco_user_level') || '2', 10);
   });
-  const [unlockedBadgeIds, setUnlockedBadgeIds] = useState(() => {
-    try {
-      return JSON.parse(localStorage.getItem('eco_user_badges') || '["velotaf", "zero_co2"]');
-    } catch {
-      return ["velotaf", "zero_co2"];
-    }
-  });
   const [showXpAnim, setShowXpAnim] = useState(false);
 
   // Sauvegarder l'état de la gamification
   useEffect(() => {
     localStorage.setItem('eco_user_xp', userXp.toString());
     localStorage.setItem('eco_user_level', userLevel.toString());
-    localStorage.setItem('eco_user_badges', JSON.stringify(unlockedBadgeIds));
-  }, [userXp, userLevel, unlockedBadgeIds]);
+  }, [userXp, userLevel]);
 
   // Autocomplete Suggestions départ
   useEffect(() => {
@@ -105,10 +90,6 @@ export default function RecoPage({ trafic, transports, air, meteo }) {
     if (newXp >= 200) {
       newXp = newXp - 200;
       newLevel += 1;
-      // Débloquer un badge
-      if (!unlockedBadgeIds.includes('metro_pro')) {
-        setUnlockedBadgeIds(prev => [...prev, 'metro_pro']);
-      }
     }
     
     setUserXp(newXp);
@@ -143,17 +124,6 @@ export default function RecoPage({ trafic, transports, air, meteo }) {
             <div style={{...styles.xpBarFill, width: `${(userXp/200)*100}%`}} />
           </div>
           {showXpAnim && <span style={styles.xpAnim}>+XP 🌿</span>}
-        </div>
-        <div style={styles.badgesWrapper}>
-          {BADGES.map(badge => {
-            const isUnlocked = unlockedBadgeIds.includes(badge.id);
-            return (
-              <div key={badge.id} style={{...styles.badgeItem, opacity: isUnlocked ? 1 : 0.4}} title={`${badge.label}: ${badge.desc}`}>
-                <span style={styles.badgeIcon}>{badge.icon}</span>
-                <span style={styles.badgeLabel}>{badge.label}</span>
-              </div>
-            );
-          })}
         </div>
       </div>
 
@@ -376,10 +346,6 @@ const styles = {
   xpBar: { height: '8px', background: '#f1f5f9', borderRadius: '4px', overflow: 'hidden', border: '1px solid #e2e8f0' },
   xpBarFill: { height: '100%', background: '#10b981', borderRadius: '4px', transition: 'width 0.5s ease-out' },
   xpAnim: { position: 'absolute', right: 0, top: '-20px', color: '#10b981', fontWeight: 800, animation: 'floatUp 1s ease-out', fontSize: '12px' },
-  badgesWrapper: { display: 'flex', gap: '8px' },
-  badgeItem: { display: 'flex', alignItems: 'center', gap: '6px', background: '#f8fafc', border: '1px solid #cbd5e1', padding: '6px 12px', borderRadius: '30px', fontSize: '11px', fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' },
-  badgeIcon: { fontSize: '14px' },
-  badgeLabel: { color: '#475569' },
   mainGrid: { display: 'grid', gridTemplateColumns: '1fr 2fr', gap: '20px' },
   searchSection: { background: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '16px', padding: '24px', display: 'flex', flexDirection: 'column', gap: '16px', height: 'fit-content', boxShadow: '0 2px 4px rgba(0,0,0,0.02)' },
   sectionTitle: { fontSize: '15px', fontWeight: 700, color: '#0f172a', marginBottom: '4px' },

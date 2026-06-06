@@ -7,6 +7,7 @@ import RecoPage       from './pages/RecoPage';
 import Simulation3DPage from './pages/Simulation3DPage';
 import AboutPage      from './pages/AboutPage';
 import ChatCitoyen    from './components/ChatCitoyen';
+import AccessibilitePanel from './components/AccessibilitePanel';
 import './index.css';
 
 const REFRESH = 10000; // 10s
@@ -252,6 +253,9 @@ export default function App() {
 
       {/* CHAT CITOYEN */}
       <ChatCitoyen onNouveauSignalement={fetchAll} />
+
+      {/* ACCESSIBILITÉ HANDICAP */}
+      <AccessibilitePanel />
     </div>
   );
 }

@@ -181,22 +181,28 @@ def calculate_route():
         print(f"Erreur recherche GTFS: {e}")
 
     # 4. Générer les options de transport
-    # Option 1: Voiture individuelle (calcul basé sur la distance)
-    # Vitesse moyenne voiture estimée à 35 km/h en milieu urbain/périurbain
-    temps_voiture = max(3, int((distance_km / 35.0) * 60))
-    # Facteur de congestion aléatoire léger (ex: entre 1x et 1.4x)
-    temps_voiture_reel = int(temps_voiture * 1.15)
+    # Option 1: Voiture individuelle (calcul réaliste basé sur la vitesse moyenne intra-muros à Paris)
+    # Vitesse moyenne estimée à 12 km/h. On ajoute un temps fixe pour les feux de circulation (2 min par km) et les intersections.
+    from datetime import datetime
+    current_hour = datetime.now().hour
+    is_peak = (7 <= current_hour <= 9) or (17 <= current_hour <= 19)
+    congestion_multiplier = 1.65 if is_peak else 1.25
+    
+    temps_conduite = (distance_km / 12.0) * 60
+    temps_feux = 3.0 + (distance_km * 2.0)
+    temps_voiture_reel = max(8, int((temps_conduite + temps_feux) * congestion_multiplier))
     co2_voiture = round(distance_km * 0.18, 2)  # 180g CO2/km
 
     # Option 2: Transports en commun / Multimodal
-    # Vitesse moyenne transport estimée à 45 km/h (incluant arrêts) + 5 min d'attente
-    temps_transit = max(5, int((distance_km / 45.0) * 60) + 5)
+    # Vitesse moyenne transport estimée à 40 km/h (incluant arrêts) + 4 min d'attente/quai
+    temps_transit = max(4, int((distance_km / 40.0) * 60) + 4)
     co2_transit = round(distance_km * 0.02, 2)  # 20g CO2/km (RER/Métro électrique)
 
     # Calcul d'un "Healthy Score" sur 100
-    # Plus le trajet rejette de CO2, plus le score baisse. Les transports doux/transit ont un excellent score.
-    score_voiture = max(10, int(100 - (co2_voiture * 8)))
-    score_transit = max(75, int(100 - (co2_transit * 4)))
+    # Solo car trip: plafonné à 45/100 pour cause de pollution, particules fines, bruit et sédentarité.
+    score_voiture = max(8, int(45 - (co2_voiture * 18)))
+    # Transit: excellent score (95/100) car propre et actif.
+    score_transit = max(70, int(95 - (co2_transit * 6)))
 
     return jsonify(
         {

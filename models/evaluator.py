@@ -10,7 +10,7 @@ from models.arima_model import train_arima_trafic, train_arima_air
 from models.lstm_model  import train_lstm_trafic
 
 logger = logging.getLogger(__name__)
-SEP = "═" * 60
+SEP = "=" * 60
 
 
 def _get_stations_air() -> list:
@@ -46,7 +46,7 @@ def _get_polluants_dispo(station_id: str) -> list:
 
 def evaluer_trafic(segment_id: str = "A1-001") -> dict:
     print(f"\n{SEP}")
-    print(f"  ÉVALUATION TRAFIC — Segment {segment_id}")
+    print(f"  EVALUATION TRAFIC - Segment {segment_id}")
     print(SEP)
 
     resultats = {}
@@ -68,7 +68,7 @@ def evaluer_trafic(segment_id: str = "A1-001") -> dict:
         print("\n  Entraînement LSTM / GradientBoosting...")
         res_lstm = train_lstm_trafic(segment_id=segment_id)
         resultats["lstm"] = res_lstm
-        print(f"  {res_lstm['modele']:<30} — MAE: {res_lstm['mae']:.2f} km/h | "
+        print(f"  {res_lstm['modele']:<30} - MAE: {res_lstm['mae']:.2f} km/h | "
               f"RMSE: {res_lstm['rmse']:.2f} | "
               f"MAPE: {res_lstm['mape']:.2f}%")
     except Exception as e:
@@ -90,7 +90,7 @@ def evaluer_trafic(segment_id: str = "A1-001") -> dict:
 def evaluer_air() -> dict:
     """Évalue ARIMA sur la qualité de l'air — détecte les stations automatiquement."""
     print(f"\n{SEP}")
-    print("  ÉVALUATION QUALITÉ DE L'AIR")
+    print("  EVALUATION QUALITE DE L'AIR")
     print(SEP)
 
     stations = _get_stations_air()
@@ -118,7 +118,7 @@ def evaluer_air() -> dict:
                 polluant=polluant,
                 steps=10,
             )
-            print(f"  ARIMA Air — MAE: {res['mae']:.2f} | "
+            print(f"  ARIMA Air - MAE: {res['mae']:.2f} | "
                   f"RMSE: {res['rmse']:.2f}")
             resultats[f"{station_id}_{polluant}"] = res
         except Exception as e:
@@ -128,9 +128,9 @@ def evaluer_air() -> dict:
 
 
 def rapport_complet() -> dict:
-    print(f"\n{'═'*60}")
-    print("  RAPPORT COMPLET — MODÈLES PRÉDICTIFS")
-    print(f"{'═'*60}")
+    print(f"\n{'='*60}")
+    print("  RAPPORT COMPLET - MODELES PREDICTIFS")
+    print(f"{'='*60}")
     print(f"  {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 
     rapport = {
@@ -148,5 +148,5 @@ def rapport_complet() -> dict:
         json.dump(rapport, f, indent=2, default=str)
 
     print(f"\n  Rapport sauvegardé : {path}")
-    print(f"{'═'*60}\n")
+    print(f"{'='*60}\n")
     return rapport
