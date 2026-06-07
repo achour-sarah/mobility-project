@@ -215,13 +215,13 @@ export default function App() {
         <div style={styles.headerRight}>
           {parisMeteo ? (
             <div style={styles.meteoBox}>
-              <span style={{fontSize:'16px'}}>🌡️</span>
+              <span style={{fontSize:'16px'}}>📍 Paris 🌡️</span>
               <span style={{fontWeight:700, color:'#0f172a'}}>{parisMeteo.temperature}°C</span>
               <span style={{fontSize:'11px', color:'#64748b'}}>{parisMeteo.description}</span>
             </div>
           ) : (
             <div style={styles.meteoBox}>
-              <span style={{fontSize:'16px'}}>🌡️</span>
+              <span style={{fontSize:'16px'}}>📍 Paris 🌡️</span>
               <span style={{fontSize:'11px', color:'#64748b'}}>Chargement...</span>
             </div>
           )}
