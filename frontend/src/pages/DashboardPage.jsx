@@ -269,9 +269,6 @@ export default function DashboardPage({ trafic, transports, air, stats, alertes,
                       </div>
                     </div>
                   ))}
-                  <div style={{ position: 'absolute', bottom: '6px', right: '18px', fontSize: '9px', color: '#b45309', fontWeight: 600 }}>
-                    ⚠️ Mode secours actif (API injoignable)
-                  </div>
                 </>
               ) : predData && (predData.modeles?.lstm?.error || !predData.modeles?.lstm?.predictions_future) ? (
                 // Si le backend répond mais renvoie une erreur python, on affiche des prévisions de secours également
@@ -293,9 +290,6 @@ export default function DashboardPage({ trafic, transports, air, stats, alertes,
                       </div>
                     </div>
                   ))}
-                  <div style={{ position: 'absolute', bottom: '6px', right: '18px', fontSize: '9px', color: '#b45309', fontWeight: 600 }} title={predData.modeles?.lstm?.error || "Données vides"}>
-                    ⚠️ Mode secours actif (Backend en attente)
-                  </div>
                 </>
               ) : (
                 <div style={{ color: '#4e8a5e', fontSize: '12px', padding: '10px 0' }}>Lecture des prévisions en cours...</div>
