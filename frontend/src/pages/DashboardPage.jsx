@@ -50,11 +50,14 @@ const getWeekName = (dateStr) => {
 export default function DashboardPage({ trafic, transports, air, stats, alertes, meteo }) {
   const [predData, setPredData] = useState(null);
   const [predError, setPredError] = useState(null);
+  const [selectedSegment, setSelectedSegment] = useState('A1-001');
   const [co2Live, setCo2Live] = useState(0);
   const [selectedTransportType, setSelectedTransportType] = useState('Tous');
 
-  useEffect(() => {
-    getPredictions('A1-001')
+  const loadPredictions = (segmentId) => {
+    setPredData(null);
+    setPredError(null);
+    getPredictions(segmentId)
       .then(r => {
         setPredData(r.data);
         setPredError(null);
@@ -63,7 +66,11 @@ export default function DashboardPage({ trafic, transports, air, stats, alertes,
         console.error(err);
         setPredError("Connexion API prédictive indisponible");
       });
-  }, []);
+  };
+
+  useEffect(() => {
+    loadPredictions(selectedSegment);
+  }, [selectedSegment]);
 
   useEffect(() => {
     if (stats) {
@@ -181,10 +188,40 @@ export default function DashboardPage({ trafic, transports, air, stats, alertes,
           
           {/* PRÉVISIONS DE TRAFIC (LSTM) */}
           <div className="nude-card" style={styles.lightCard}>
-            <div style={{ marginBottom: '16px' }}>
-              <div style={styles.chartTitle}>📈 Prévisions de Vitesse - Flux Autoroutier (A1)</div>
-              <div style={{ fontSize: '11.5px', color: '#64748b', marginTop: '4px', lineHeight: 1.4 }}>
-                Prévisions de fluidité calculées en continu par notre modèle prédictif pour les prochaines minutes.
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+              <div>
+                <div style={styles.chartTitle}>📈 Prévisions de Vitesse - Flux Autoroutiers</div>
+                <div style={{ fontSize: '11.5px', color: '#64748b', marginTop: '4px', lineHeight: 1.4 }}>
+                  Prévisions de fluidité calculées par notre modèle prédictif pour les prochaines minutes.
+                </div>
+              </div>
+              
+              {/* Sélecteur de Segment */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span style={{ fontSize: '11.5px', fontWeight: 700, color: '#4e8a5e' }}>Segment :</span>
+                <select 
+                  value={selectedSegment} 
+                  onChange={(e) => setSelectedSegment(e.target.value)}
+                  style={{
+                    padding: '6px 12px',
+                    borderRadius: '10px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '12px',
+                    fontWeight: 600,
+                    color: '#0f172a',
+                    background: '#f8fafc',
+                    outline: 'none',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="A1-001">Autoroute A1 (Pilote)</option>
+                  <option value="A3-001">Autoroute A3</option>
+                  <option value="A4-001">Autoroute A4</option>
+                  <option value="A6-001">Autoroute A6</option>
+                  <option value="A13-001">Autoroute A13</option>
+                  <option value="BD-001">Périphérique (BD)</option>
+                  <option value="N118-001">Nationale N118</option>
+                </select>
               </div>
             </div>
 
