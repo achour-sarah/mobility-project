@@ -301,7 +301,7 @@ def calculate_route():
                     "icon": "🚗",
                 },
                 "transit": {
-                    "mode": "Itinéraire Multimodal (P+R & Rails)",
+                    "mode": "Itinéraire Multimodal",
                     "temps_minutes": temps_transit,
                     "co2_kg": co2_transit,
                     "healthy_score": score_transit,
