@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { ComposedChart, Bar, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { getPredictions } from '../api';
 import axios from 'axios';
 
@@ -270,14 +270,16 @@ export default function DashboardPage({ trafic, transports, air, stats, alertes,
           <div className="nude-card" style={styles.lightCard}>
             <div style={styles.chartTitle}>Rapport du Trafic Terrestre (Vitesse vs Occupation)</div>
             <ResponsiveContainer width="100%" height={230}>
-              <BarChart data={barData} margin={{ top: 5, right: 10, left: -20, bottom: 5 }}>
+              <ComposedChart data={barData} margin={{ top: 20, right: -10, left: -20, bottom: 5 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1ece4" vertical={false} />
                 <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#8c857b' }} axisLine={false} tickLine={false} />
-                <YAxis tick={{ fontSize: 10, fill: '#8c857b' }} axisLine={false} tickLine={false} />
+                <YAxis yAxisId="left" orientation="left" stroke="#4e8a5e" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
+                <YAxis yAxisId="right" orientation="right" stroke="#d97706" domain={[0, 100]} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
                 <Tooltip cursor={{ fill: '#f5efe9' }} contentStyle={{ background: '#ffffff', border: '1px solid #efebe4', borderRadius: '12px', color: '#3d3a35', fontSize: '12px' }} />
-                <Bar dataKey="vitesse" fill="#4e8a5e" radius={[4, 4, 0, 0]} name="Vitesse km/h" />
-                <Bar dataKey="occupation" fill="#6aab7a" radius={[4, 4, 0, 0]} name="Occupation %" />
-              </BarChart>
+                <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: '11px', fontWeight: 600 }} />
+                <Bar yAxisId="left" dataKey="vitesse" fill="#4e8a5e" radius={[4, 4, 0, 0]} barSize={25} name="Vitesse moyenne (km/h)" />
+                <Line yAxisId="right" type="monotone" dataKey="occupation" stroke="#d97706" strokeWidth={3} dot={{ r: 4, stroke: '#d97706', strokeWidth: 2, fill: '#ffffff' }} activeDot={{ r: 6 }} name="Taux d'occupation (%)" />
+              </ComposedChart>
             </ResponsiveContainer>
           </div>
 
