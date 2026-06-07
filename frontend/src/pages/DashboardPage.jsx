@@ -299,13 +299,13 @@ export default function DashboardPage({ trafic, transports, air, stats, alertes,
 
           {/* GRAPHIQUE VITESSE / OCCUPATION */}
           <div className="nude-card" style={styles.lightCard}>
-            <div style={styles.chartTitle}>Rapport du Trafic Terrestre (Vitesse vs Occupation)</div>
+            <div style={styles.chartTitle}>Vitesse vs Occupation</div>
             <ResponsiveContainer width="100%" height={230}>
-              <ComposedChart data={barData} margin={{ top: 20, right: -10, left: -20, bottom: 5 }}>
+              <ComposedChart data={barData} margin={{ top: 20, right: 60, left: 60, bottom: 40 }}>
                 <CartesianGrid strokeDasharray="3 3" stroke="#f1ece4" vertical={false} />
-                <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#8c857b' }} axisLine={false} tickLine={false} />
-                <YAxis yAxisId="left" orientation="left" stroke="#4e8a5e" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
-                <YAxis yAxisId="right" orientation="right" stroke="#d97706" domain={[0, 100]} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} />
+                <XAxis dataKey="name" tick={{ fontSize: 10, fill: '#8c857b' }} axisLine={false} tickLine={false} label={{ value: 'Axes Routiers', position: 'insideBottom', offset: -10, fontSize: 11, fontWeight: 700, fill: '#64748b' }} />
+                <YAxis yAxisId="left" orientation="left" stroke="#4e8a5e" tick={{ fontSize: 10 }} axisLine={false} tickLine={false} label={{ value: 'Vitesse (km/h)', angle: -90, position: 'insideLeft', offset: -45, fontSize: 11, fontWeight: 700, fill: '#4e8a5e' }} />
+                <YAxis yAxisId="right" orientation="right" stroke="#d97706" domain={[0, 100]} tick={{ fontSize: 10 }} axisLine={false} tickLine={false} label={{ value: 'Occupation (%)', angle: 90, position: 'insideRight', offset: -45, fontSize: 11, fontWeight: 700, fill: '#d97706' }} />
                 <Tooltip cursor={{ fill: '#f5efe9' }} contentStyle={{ background: '#ffffff', border: '1px solid #efebe4', borderRadius: '12px', color: '#3d3a35', fontSize: '12px' }} />
                 <Legend verticalAlign="top" height={36} wrapperStyle={{ fontSize: '11px', fontWeight: 600 }} />
                 <Bar yAxisId="left" dataKey="vitesse" fill="#4e8a5e" radius={[4, 4, 0, 0]} barSize={25} name="Vitesse moyenne (km/h)" />
