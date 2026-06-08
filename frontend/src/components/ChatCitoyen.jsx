@@ -1,7 +1,80 @@
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 
-const BASE = 'http://127.0.0.1:5000/api';
+const BASE = process.env.REACT_APP_API_URL || 'http://127.0.0.1:5000/api';
+
+const localAnalyze = (texte, auteur) => {
+  const t = texte.toLowerCase();
+  
+  // 1. Détecter le type d'incident
+  let type_incident = 'autre';
+  if (t.includes('panne') || t.includes('bloqu') || t.includes('arrêt') || t.includes('stopp') || t.includes('incident')) {
+    type_incident = 'panne';
+  } else if (t.includes('accident') || t.includes('choc') || t.includes('collision') || t.includes('renvers')) {
+    type_incident = 'accident';
+  } else if (t.includes('travaux') || t.includes('chantier') || t.includes('ferme') || t.includes('barr')) {
+    type_incident = 'travaux';
+  } else if (t.includes('bouchon') || t.includes('embouteillage') || t.includes('ralent') || t.includes('charg') || t.includes('monde') || t.includes('satur')) {
+    type_incident = 'embouteillage';
+  } else if (t.includes('pollu') || t.includes('air') || t.includes('smog') || t.includes('respir')) {
+    type_incident = 'pollution';
+  }
+  
+  // 2. Détecter la gravité
+  let gravite = 'moyen';
+  if (t.includes('bloqué') || t.includes('critique') || t.includes('grave') || t.includes('accident') || t.includes('urgence')) {
+    gravite = 'élevé';
+  } else if (t.includes('interrompu') || t.includes('fermé') || t.includes('bloque complet')) {
+    gravite = 'critique';
+  } else if (t.includes('léger') || t.includes('retard de 5 min') || t.includes('un peu')) {
+    gravite = 'faible';
+  }
+  
+  // 3. Détecter la ligne concernée (RER A, M1, A1, etc.)
+  let ligne = null;
+  const matchLigne = texte.match(/(rer\s+[a-e]|métro\s+\d+|ligne\s+\d+|bus\s+\d+|a\d+|n\d+)/i);
+  if (matchLigne) {
+    ligne = matchLigne[0].toUpperCase();
+  }
+  
+  // 4. Synthèse / Résumé IA
+  let resume_ia = `Incident signalé par le citoyen. Type détecté : ${type_incident}.`;
+  if (type_incident === 'panne') {
+    resume_ia = `Perturbation ou arrêt technique signalé.`;
+  } else if (type_incident === 'accident') {
+    resume_ia = `Collision ou accident de la route détecté.`;
+  } else if (type_incident === 'travaux') {
+    resume_ia = `Zone de chantier ou restriction de voirie signalée.`;
+  } else if (type_incident === 'embouteillage') {
+    resume_ia = `Ralentissement important ou congestion routière détectée.`;
+  } else if (type_incident === 'pollution') {
+    resume_ia = `Signalement concernant la dégradation de la qualité de l'air ou des odeurs suspectes.`;
+  }
+  
+  // 5. Recommandation
+  let recommandation = "Soyez vigilant dans cette zone et suivez les indications locales.";
+  if (ligne) {
+    if (type_incident === 'panne' || type_incident === 'embouteillage') {
+      recommandation = `Reportez-vous sur les itinéraires alternatifs pour contourner la ligne/axe ${ligne}.`;
+    }
+  }
+  
+  return {
+    id: 'mock-' + Math.random().toString(36).substr(2, 9),
+    texte,
+    auteur,
+    type: 'signalement',
+    time: new Date().toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'}),
+    analyse: {
+      type_incident,
+      gravite,
+      ligne,
+      resume_ia,
+      recommandation,
+      votes: 0
+    }
+  };
+};
 
 const GRAVITE_COLOR = {
   faible:   { bg:'#dcfce7', color:'#166534', border:'#22c55e' },
@@ -53,7 +126,16 @@ export default function ChatCitoyen({ onNouveauSignalement }) {
         time:      new Date(s.collecte_at).toLocaleTimeString('fr-FR', {hour:'2-digit',minute:'2-digit'}),
       }));
       setMessages(msgs.reverse());
-    } catch(e) { console.error(e); }
+    } catch(e) { 
+      console.error(e);
+      // Fallback : chargement de données de démo locales si le serveur est inaccessible
+      const initialMocks = [
+        localAnalyze("RER A en panne à Châtelet, je suis bloqué depuis 20 min", "Marie_IDF"),
+        localAnalyze("Gros bouchon sur le périphérique nord direction Porte de la Chapelle", "Thomas75"),
+        localAnalyze("Accident sur l'A1 vers Paris, évitez !", "Ahmed_94")
+      ];
+      setMessages(initialMocks);
+    }
   };
 
   // Générer des signalements démo automatiquement
@@ -65,7 +147,13 @@ export default function ChatCitoyen({ onNouveauSignalement }) {
       await chargerSignalements();
       setNbNouveaux(n => n + 1);
       if (onNouveauSignalement) onNouveauSignalement();
-    } catch(e) {}
+    } catch(e) {
+      // Si le serveur est inaccessible, on génère un faux message de démo localement
+      const mockMsg = localAnalyze(texteDemo, auteurDemo);
+      setMessages(prev => [...prev, mockMsg]);
+      setNbNouveaux(n => n + 1);
+      if (onNouveauSignalement) onNouveauSignalement();
+    }
   };
 
   useEffect(() => {
@@ -95,17 +183,27 @@ export default function ChatCitoyen({ onNouveauSignalement }) {
       await chargerSignalements();
       if (onNouveauSignalement) onNouveauSignalement();
     } catch(e) {
-      console.error(e);
+      console.warn("Backend error, using client-side analysis fallback:", e);
+      const mockMsg = localAnalyze(texte.trim(), nom);
+      setMessages(prev => [...prev, mockMsg]);
+      setTexte('');
+      if (onNouveauSignalement) onNouveauSignalement();
     }
     setLoading(false);
   };
 
   const voter = async (id) => {
     try {
-      await axios.post(`${BASE}/signalements/${id}/vote`);
-      setMessages(prev => prev.map(m =>
-        m.id === id ? { ...m, analyse: { ...m.analyse, votes: (m.analyse.votes||0)+1 } } : m
-      ));
+      if (id.toString().startsWith('mock-')) {
+        setMessages(prev => prev.map(m =>
+          m.id === id ? { ...m, analyse: { ...m.analyse, votes: (m.analyse.votes||0)+1 } } : m
+        ));
+      } else {
+        await axios.post(`${BASE}/signalements/${id}/vote`);
+        setMessages(prev => prev.map(m =>
+          m.id === id ? { ...m, analyse: { ...m.analyse, votes: (m.analyse.votes||0)+1 } } : m
+        ));
+      }
     } catch(e) {}
   };
 
